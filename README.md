@@ -33,9 +33,17 @@ constrain them.
 - **policies/** — guardrails applied to tenant namespaces. `base/kyverno`
   installs the Kyverno controller (Helm), `base/policies` holds the
   `ClusterPolicy` set (starting with the flux-multi-tenancy guardrail that blocks
-  cross-namespace source references), and `base/policy-reporter` installs
+  cross-namespace source references), `base/policy-reporter` installs
   [Policy Reporter](https://kyverno.github.io/policy-reporter/) with its web UI
-  for browsing results. Every cluster runs Kyverno.
+  for browsing results, and `base/network` holds a Cilium cluster-wide
+  default-deny `CiliumClusterwideNetworkPolicy`. Every cluster runs Kyverno.
+
+  The `default-deny` policy denies all ingress/egress for **workload**
+  namespaces while excluding the platform namespaces (`kube-system`,
+  `flux-system`, `kyverno`, `policy-reporter`, ...) so the control plane, GitOps
+  and admission webhooks keep working. It permits DNS and host/API-server
+  traffic; everything else needs an explicit allow policy. Requires Cilium as the
+  CNI (managed via Terraform).
 - **tenants/** — tenant definitions (namespaces, service accounts, RBAC and the
   Flux sources/Kustomizations each tenant manages).
 
@@ -51,6 +59,8 @@ Per cluster, Flux applies two Kustomizations:
 2. `kyverno-policies` → the `ClusterPolicy` resources (`dependsOn: kyverno`, so
    they only apply once the CRDs exist)
 3. `policy-reporter` → Policy Reporter + UI (`dependsOn: kyverno`)
+4. `network-policies` → Cilium cluster-wide default-deny (requires the
+   Cilium CRDs, which Terraform installs out-of-band)
 
 Reach the Policy Reporter UI with a port-forward (no Ingress configured yet):
 

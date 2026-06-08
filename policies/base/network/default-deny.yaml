@@ -1,0 +1,47 @@
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  description: >-
+    Cluster-wide default-deny for workload namespaces. Platform namespaces
+    (kube-system, flux-system, kyverno, policy-reporter, ...) are excluded so the
+    control plane, GitOps reconciliation, and admission webhooks keep working.
+    Selected workloads may only reach DNS and the host/control-plane; all other
+    ingress and egress must be granted by an explicit allow policy.
+  endpointSelector:
+    matchExpressions:
+      # Default-deny everything EXCEPT the platform-managed namespaces. Locking
+      # these down would break CoreDNS, Flux (egress to GitHub), and the Kyverno
+      # webhook — and risk locking GitOps out of its own recovery path.
+      - key: k8s:io.kubernetes.pod.namespace
+        operator: NotIn
+        values:
+          - kube-system
+          - kube-node-lease
+          - kube-public
+          - flux-system
+          - kyverno
+          - policy-reporter
+  ingress:
+    # Allow node-level traffic (kubelet health/liveness probes) and the API server.
+    - fromEntities:
+        - host
+        - remote-node
+        - kube-apiserver
+  egress:
+    - toEntities:
+        - host
+        - remote-node
+        - kube-apiserver
+    # Allow DNS resolution against CoreDNS so name lookups still work.
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
