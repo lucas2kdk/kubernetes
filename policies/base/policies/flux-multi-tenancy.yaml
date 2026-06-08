@@ -6,11 +6,15 @@ spec:
   validationFailureAction: Enforce
   rules:
     - name: serviceAccountName
+      # Platform-managed namespaces are not tenants and run with cluster
+      # privileges, so they are exempt from tenant isolation.
       exclude:
         any:
           - resources:
               namespaces:
                 - flux-system
+                - kyverno
+                - policy-reporter
       match:
         any:
           - resources:
@@ -22,21 +26,22 @@ spec:
         pattern:
           spec:
             serviceAccountName: "?*"
-    - name: sourceRefNamespace
+    - name: kustomizationSourceRefNamespace
       exclude:
         any:
           - resources:
               namespaces:
                 - flux-system
+                - kyverno
+                - policy-reporter
       match:
         any:
           - resources:
               kinds:
                 - Kustomization
-                - HelmRelease
       preconditions:
         any:
-          - key: "{{ request.object.spec.sourceRef.namespace }}"
+          - key: "{{ request.object.spec.sourceRef.namespace || '' }}"
             operator: NotEquals
             value: ""
       validate:
@@ -45,5 +50,31 @@ spec:
           conditions:
             any:
               - key: "{{ request.object.spec.sourceRef.namespace }}"
+                operator: NotEquals
+                value: "{{ request.object.metadata.namespace }}"
+    - name: helmReleaseSourceRefNamespace
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - flux-system
+                - kyverno
+                - policy-reporter
+      match:
+        any:
+          - resources:
+              kinds:
+                - HelmRelease
+      preconditions:
+        any:
+          - key: "{{ request.object.spec.chart.spec.sourceRef.namespace || '' }}"
+            operator: NotEquals
+            value: ""
+      validate:
+        message: "spec.chart.spec.sourceRef.namespace must be the same as metadata.namespace"
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.spec.chart.spec.sourceRef.namespace }}"
                 operator: NotEquals
                 value: "{{ request.object.metadata.namespace }}"
