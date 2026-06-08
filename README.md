@@ -31,9 +31,11 @@ constrain them.
   folder holds the Flux `Kustomization` objects that point at the `policies` and
   `tenants` overlays for that environment.
 - **policies/** — guardrails applied to tenant namespaces. `base/kyverno`
-  installs the Kyverno controller (Helm) and `base/policies` holds the
+  installs the Kyverno controller (Helm), `base/policies` holds the
   `ClusterPolicy` set (starting with the flux-multi-tenancy guardrail that blocks
-  cross-namespace source references). Every cluster runs Kyverno.
+  cross-namespace source references), and `base/policy-reporter` installs
+  [Policy Reporter](https://kyverno.github.io/policy-reporter/) with its web UI
+  for browsing results. Every cluster runs Kyverno.
 - **tenants/** — tenant definitions (namespaces, service accounts, RBAC and the
   Flux sources/Kustomizations each tenant manages).
 
@@ -48,6 +50,14 @@ Per cluster, Flux applies two Kustomizations:
 1. `kyverno` → the Kyverno controller and CRDs
 2. `kyverno-policies` → the `ClusterPolicy` resources (`dependsOn: kyverno`, so
    they only apply once the CRDs exist)
+3. `policy-reporter` → Policy Reporter + UI (`dependsOn: kyverno`)
+
+Reach the Policy Reporter UI with a port-forward (no Ingress configured yet):
+
+```bash
+kubectl -n policy-reporter port-forward svc/policy-reporter-ui 8082:8080
+# then open http://localhost:8082
+```
 
 > **Note:** The cluster CNI (Cilium) and its Hubble observability layer are
 > managed out-of-band via Terraform, not by this repository.
