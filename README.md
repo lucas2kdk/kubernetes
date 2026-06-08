@@ -15,11 +15,6 @@ constrain them.
 │   ├── admin
 │   ├── dev
 │   └── prod
-├── infrastructure   # Cluster add-ons (Cilium + Hubble)
-│   ├── base
-│   ├── admin
-│   ├── dev
-│   └── prod
 ├── policies         # Guardrails enforced across tenants (Kyverno)
 │   ├── base
 │   ├── admin
@@ -33,11 +28,8 @@ constrain them.
 ```
 
 - **clusters/** — the per-cluster reconciliation entry points. Each cluster's
-  folder holds the Flux `Kustomization` objects that point at the
-  `infrastructure`, `policies` and `tenants` overlays for that environment.
-- **infrastructure/** — cluster-wide add-ons. `base/cilium` installs Cilium with
-  Hubble (relay + UI) enabled for network observability, delivered as a Flux
-  `HelmRelease`. Every cluster reconciles it.
+  folder holds the Flux `Kustomization` objects that point at the `policies` and
+  `tenants` overlays for that environment.
 - **policies/** — guardrails applied to tenant namespaces. `base/kyverno`
   installs the Kyverno controller (Helm) and `base/policies` holds the
   `ClusterPolicy` set (starting with the flux-multi-tenancy guardrail that blocks
@@ -51,16 +43,14 @@ out of the shared definitions.
 
 ### Reconcile order
 
-Per cluster, Flux applies three Kustomizations:
+Per cluster, Flux applies two Kustomizations:
 
-1. `infrastructure` → Cilium + Hubble
-2. `kyverno` → the Kyverno controller and CRDs
-3. `kyverno-policies` → the `ClusterPolicy` resources (`dependsOn: kyverno`, so
+1. `kyverno` → the Kyverno controller and CRDs
+2. `kyverno-policies` → the `ClusterPolicy` resources (`dependsOn: kyverno`, so
    they only apply once the CRDs exist)
 
-> **Note:** Cilium is the cluster CNI. On a brand-new cluster it is normally
-> installed at bootstrap time; reconciling it through Flux assumes the cluster
-> already has enough connectivity for the helm-controller to run.
+> **Note:** The cluster CNI (Cilium) and its Hubble observability layer are
+> managed out-of-band via Terraform, not by this repository.
 
 ## Reference
 
