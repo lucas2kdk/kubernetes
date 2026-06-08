@@ -52,6 +52,72 @@ Per cluster, Flux applies two Kustomizations:
 > **Note:** The cluster CNI (Cilium) and its Hubble observability layer are
 > managed out-of-band via Terraform, not by this repository.
 
+## Bootstrap
+
+Run once per cluster to install Flux and point it at that cluster's path. Set
+your `kubectl` context to the target cluster first, and export a GitHub PAT with
+`repo` scope:
+
+```bash
+export GITHUB_TOKEN=<your-pat>
+```
+
+```bash
+# admin
+kubectl config use-context <admin-context>
+flux bootstrap github \
+  --owner=lucas2kdk \
+  --repository=kubernetes \
+  --branch=main \
+  --path=clusters/admin \
+  --personal
+
+# dev
+kubectl config use-context <dev-context>
+flux bootstrap github \
+  --owner=lucas2kdk \
+  --repository=kubernetes \
+  --branch=main \
+  --path=clusters/dev \
+  --personal
+
+# prod
+kubectl config use-context <prod-context>
+flux bootstrap github \
+  --owner=lucas2kdk \
+  --repository=kubernetes \
+  --branch=main \
+  --path=clusters/prod \
+  --personal
+```
+
+Bootstrap is idempotent — rerunning it upgrades Flux and reconciles the path.
+
+## Reconcile
+
+After bootstrap, push to Git and either wait for the sync interval or force it:
+
+```bash
+# pull latest from Git and re-apply everything
+flux reconcile source git flux-system
+flux reconcile kustomization flux-system --with-source
+
+# a single Kustomization
+flux reconcile kustomization kyverno -n flux-system --with-source
+flux reconcile kustomization kyverno-policies -n flux-system
+
+# the Kyverno HelmRelease (e.g. after a values change)
+flux reconcile helmrelease kyverno -n kyverno --with-source
+```
+
+Check status:
+
+```bash
+flux get kustomizations -A
+flux get helmreleases -A
+flux logs --follow
+```
+
 ## Reference
 
 - [Flux multi-tenancy guide](https://github.com/fluxcd/flux2-multi-tenancy)
