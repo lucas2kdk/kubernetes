@@ -1,0 +1,37 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits"
+  ],
+  "timezone": "Europe/Copenhagen",
+  "schedule": ["before 7am on monday"],
+  "labels": ["dependencies", "renovate"],
+  "prHourlyLimit": 4,
+  "prConcurrentLimit": 10,
+  "flux": {
+    "managerFilePatterns": ["/(^|/).+\\.ya?ml$/"]
+  },
+  "helm-values": {
+    "managerFilePatterns": ["/(^|/).+\\.ya?ml$/"]
+  },
+  "packageRules": [
+    {
+      "description": "Group Kyverno chart and Policy Reporter updates",
+      "matchPackageNames": ["kyverno", "policy-reporter"],
+      "groupName": "kyverno stack"
+    },
+    {
+      "description": "Group Flux GitOps toolkit component bumps",
+      "matchManagers": ["flux"],
+      "matchDepNames": ["fluxcd/flux2"],
+      "groupName": "flux"
+    },
+    {
+      "description": "Require manual approval for major version bumps",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    }
+  ]
+}
