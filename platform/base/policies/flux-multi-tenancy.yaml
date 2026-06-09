@@ -16,6 +16,13 @@ spec:
                 - kyverno
                 - policy-reporter
                 - headlamp
+                - cert-manager
+                - external-secrets
+                - tailscale
+                - traefik
+                - monitoring
+                - netdata
+                - vector
       match:
         any:
           - resources:
@@ -36,6 +43,13 @@ spec:
                 - kyverno
                 - policy-reporter
                 - headlamp
+                - cert-manager
+                - external-secrets
+                - tailscale
+                - traefik
+                - monitoring
+                - netdata
+                - vector
       match:
         any:
           - resources:
@@ -63,6 +77,13 @@ spec:
                 - kyverno
                 - policy-reporter
                 - headlamp
+                - cert-manager
+                - external-secrets
+                - tailscale
+                - traefik
+                - monitoring
+                - netdata
+                - vector
       match:
         any:
           - resources:

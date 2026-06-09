@@ -23,6 +23,17 @@ spec:
           - flux-system
           - kyverno
           - policy-reporter
+          # Platform component namespaces — managed by the platform, not tenant
+          # workloads. Excluded so cert-manager (ACME/DNS), ESO (Vault), Tailscale
+          # (tailnet), Traefik (LB ingress), Prometheus (scrape) and Vector (Humio)
+          # keep working. Tighten with explicit allow policies in V2.
+          - cert-manager
+          - external-secrets
+          - tailscale
+          - traefik
+          - monitoring
+          - netdata
+          - vector
   ingress:
     # Allow node-level traffic (kubelet health/liveness probes) and the API server.
     - fromEntities:
