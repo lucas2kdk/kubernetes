@@ -11,10 +11,10 @@
   "prHourlyLimit": 4,
   "prConcurrentLimit": 10,
   "flux": {
-    "managerFilePatterns": ["/(^|/).+\\.ya?ml$/"]
+    "fileMatch": ["(^|/).+\\.ya?ml$"]
   },
   "helm-values": {
-    "managerFilePatterns": ["/(^|/).+\\.ya?ml$/"]
+    "fileMatch": ["(^|/).+\\.ya?ml$"]
   },
   "packageRules": [
     {
