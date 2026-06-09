@@ -26,6 +26,7 @@ spec:
       retries: 3
   values:
     installCRDs: true
-    # TODO: ClusterSecretStore pointing at HashiCorp Vault (DO App Platform),
-    # Kubernetes auth backend mounted per-cluster at kubernetes/<cluster-name>.
-    # Vault layout: secret/tenants/<tenant>/ and secret/platform/.
+    # The `vault` ClusterSecretStore (cluster-secret-store.yaml) targets HashiCorp Vault
+    # (DO App Platform). Vault's per-cluster kubernetes auth backend, role and policy, and
+    # the secret/ KV engine (layout: secret/platform/*, secret/tenants/<tenant>/*) are
+    # managed by Terraform; each overlay patches the auth mountPath to kubernetes/<cluster>.
