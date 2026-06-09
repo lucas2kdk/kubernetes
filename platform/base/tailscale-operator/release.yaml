@@ -26,7 +26,9 @@ spec:
     apiServerProxyConfig:
       mode: "true"
       allowImpersonation: "true"
-    # TODO: OAuth client credentials must come from Vault via External Secrets
-    # (do not inline). Set oauthSecretVolume / existing secret once ESO is live.
+    # OAuth client credentials come from Vault via External Secrets: the
+    # ExternalSecret (external-secret.yaml) syncs secret/platform/tailscale into the
+    # `operator-oauth` Secret. oauth.clientId/clientSecret are intentionally left unset
+    # so the chart references that pre-existing secret (keys: client_id, client_secret).
     # TODO: tag the operator device and wire ACL grants -> impersonation groups
     # (developers, maintainers) per the access model.

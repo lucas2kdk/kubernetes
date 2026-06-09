@@ -15,13 +15,11 @@ spec:
         name: external-secrets
         namespace: flux-system
   install:
-    crds:
-      enabled: true
+    crds: CreateReplace
     remediation:
       retries: 3
   upgrade:
-    crds:
-      enabled: true
+    crds: CreateReplace
     remediation:
       retries: 3
   values:
