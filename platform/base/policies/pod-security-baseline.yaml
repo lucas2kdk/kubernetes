@@ -1,0 +1,48 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pod-security-baseline
+  annotations:
+    policies.kyverno.io/title: Pod Security Standards (Baseline)
+    policies.kyverno.io/category: Pod Security Standards
+    policies.kyverno.io/description: >-
+      Enforce the Kubernetes Pod Security Standards "baseline" profile:
+      no privileged containers, host namespaces, hostPath/hostPort, or
+      dangerous capabilities. Uses Kyverno's built-in podSecurity subrule so
+      all container types (init, ephemeral) are covered correctly.
+spec:
+  # Audit-only for now; promote to Enforce per-environment via overlays once
+  # the policy reports are clean.
+  background: true
+  rules:
+    - name: baseline
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          # Platform/system namespaces run privileged components and are not
+          # tenant workloads — same exclusion set as flux-multi-tenancy.
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-node-lease
+                - kube-public
+                - flux-system
+                - kyverno
+                - policy-reporter
+                - headlamp
+                - cert-manager
+                - external-secrets
+                - tailscale
+                - traefik
+                - monitoring
+                - netdata
+                - vector
+      validate:
+        failureAction: Audit
+        podSecurity:
+          level: baseline
+          version: latest

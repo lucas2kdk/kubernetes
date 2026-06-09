@@ -1,0 +1,49 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-resource-requests
+  annotations:
+    policies.kyverno.io/title: Require Resource Requests
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/description: >-
+      Require CPU and memory resource requests on all containers so the
+      scheduler can place pods sensibly and one workload cannot starve a node.
+      Limits are intentionally not required here (CPU limits cause throttling);
+      tighten per-tenant if desired.
+spec:
+  background: true
+  rules:
+    - name: require-requests
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-node-lease
+                - kube-public
+                - flux-system
+                - kyverno
+                - policy-reporter
+                - headlamp
+                - cert-manager
+                - external-secrets
+                - tailscale
+                - traefik
+                - monitoring
+                - netdata
+                - vector
+      validate:
+        failureAction: Audit
+        message: "CPU and memory resource requests are required on every container."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  requests:
+                    memory: "?*"
+                    cpu: "?*"

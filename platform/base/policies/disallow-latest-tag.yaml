@@ -1,0 +1,75 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow Latest Tag
+    policies.kyverno.io/category: Best Practices
+    policies.kyverno.io/description: >-
+      Require an explicit image tag and reject the mutable ':latest' tag so
+      GitOps deployments are reproducible and rollbacks are deterministic.
+spec:
+  background: true
+  rules:
+    - name: require-image-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-node-lease
+                - kube-public
+                - flux-system
+                - kyverno
+                - policy-reporter
+                - headlamp
+                - cert-manager
+                - external-secrets
+                - tailscale
+                - traefik
+                - monitoring
+                - netdata
+                - vector
+      validate:
+        failureAction: Audit
+        message: "An explicit image tag is required."
+        pattern:
+          spec:
+            containers:
+              - image: "*:*"
+    - name: validate-image-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-node-lease
+                - kube-public
+                - flux-system
+                - kyverno
+                - policy-reporter
+                - headlamp
+                - cert-manager
+                - external-secrets
+                - tailscale
+                - traefik
+                - monitoring
+                - netdata
+                - vector
+      validate:
+        failureAction: Audit
+        message: "Using the mutable ':latest' image tag is not allowed."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"

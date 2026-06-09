@@ -1,0 +1,29 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-default-namespace
+  annotations:
+    policies.kyverno.io/title: Disallow Default Namespace
+    policies.kyverno.io/category: Multi-Tenancy
+    policies.kyverno.io/description: >-
+      Workloads must run in a dedicated, named namespace rather than the
+      'default' namespace. Keeps the tenant model clean and complements
+      flux-multi-tenancy.
+spec:
+  background: true
+  rules:
+    - name: disallow-default-namespace
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        failureAction: Audit
+        message: "Workloads must run in a dedicated namespace, not 'default'."
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.namespace }}"
+                operator: Equals
+                value: default

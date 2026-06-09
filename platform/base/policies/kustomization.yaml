@@ -2,3 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - flux-multi-tenancy.yaml
+  # Tier 1 baseline policies — rolled out as Audit; promote to Enforce
+  # per-environment via overlays once policy reports are clean.
+  - pod-security-baseline.yaml
+  - disallow-default-namespace.yaml
+  - require-requests.yaml
+  - disallow-latest-tag.yaml
+  - require-pod-probes.yaml
