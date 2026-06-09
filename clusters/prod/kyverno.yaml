@@ -10,6 +10,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./policies/prod/kyverno
+  path: ./platform/overlays/prod/kyverno
   prune: true
   wait: true

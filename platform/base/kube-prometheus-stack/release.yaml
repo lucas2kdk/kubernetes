@@ -1,0 +1,30 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+  namespace: monitoring
+spec:
+  interval: 1h
+  releaseName: kube-prometheus-stack
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      version: "70.x" # TODO: pin exact version (Renovate-managed)
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  values:
+    # Grafana is external — clusters ship metrics out, no in-cluster Grafana.
+    grafana:
+      enabled: false
+    # TODO: prometheus.prometheusSpec.remoteWrite -> external Grafana/Mimir.
+    # TODO: Alertmanager routing/receivers (PagerDuty/Slack), alert rules from repo.

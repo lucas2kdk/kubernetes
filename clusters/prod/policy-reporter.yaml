@@ -12,6 +12,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./policies/prod/policy-reporter
+  path: ./platform/overlays/prod/policy-reporter
   prune: true
   wait: true

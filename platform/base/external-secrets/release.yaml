@@ -1,0 +1,31 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: external-secrets
+  namespace: external-secrets
+spec:
+  interval: 1h
+  releaseName: external-secrets
+  chart:
+    spec:
+      chart: external-secrets
+      version: "0.x" # TODO: pin exact version (Renovate-managed)
+      sourceRef:
+        kind: HelmRepository
+        name: external-secrets
+        namespace: flux-system
+  install:
+    crds:
+      enabled: true
+    remediation:
+      retries: 3
+  upgrade:
+    crds:
+      enabled: true
+    remediation:
+      retries: 3
+  values:
+    installCRDs: true
+    # TODO: ClusterSecretStore pointing at HashiCorp Vault (DO App Platform),
+    # Kubernetes auth backend mounted per-cluster at kubernetes/<cluster-name>.
+    # Vault layout: secret/tenants/<tenant>/ and secret/platform/.

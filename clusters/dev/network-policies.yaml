@@ -10,5 +10,5 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./policies/dev/network
+  path: ./platform/overlays/dev/network
   prune: true

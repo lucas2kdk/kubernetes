@@ -1,0 +1,25 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik
+  namespace: traefik
+spec:
+  interval: 1h
+  releaseName: traefik
+  chart:
+    spec:
+      chart: traefik
+      version: "33.x" # TODO: pin exact version (Renovate-managed)
+      sourceRef:
+        kind: HelmRepository
+        name: traefik
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values: {}
+    # TODO: cloud LoadBalancer service (DO LB), default TLS via cert-manager
+    # ClusterIssuer. Migrate to Cilium Gateway API later (deferred).

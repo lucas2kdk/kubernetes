@@ -1,0 +1,32 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: tailscale-operator
+  namespace: tailscale
+spec:
+  interval: 1h
+  releaseName: tailscale-operator
+  chart:
+    spec:
+      chart: tailscale-operator
+      version: "1.x" # TODO: pin exact version (Renovate-managed)
+      sourceRef:
+        kind: HelmRepository
+        name: tailscale
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    # API-server proxy in auth mode so the proxy impersonates the tailnet
+    # identity against the Kubernetes API and standard RBAC applies.
+    apiServerProxyConfig:
+      mode: "true"
+      allowImpersonation: "true"
+    # TODO: OAuth client credentials must come from Vault via External Secrets
+    # (do not inline). Set oauthSecretVolume / existing secret once ESO is live.
+    # TODO: tag the operator device and wire ACL grants -> impersonation groups
+    # (developers, maintainers) per the access model.

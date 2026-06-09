@@ -12,55 +12,71 @@ constrain them.
 
 ```
 ├── clusters         # Flux entry point per cluster
-│   ├── admin
+│   ├── admin        #   one Flux Kustomization per platform component + tenants
 │   ├── dev
 │   └── prod
-├── policies         # Guardrails enforced across tenants (Kyverno)
-│   ├── base
-│   ├── admin
-│   ├── dev
-│   └── prod
+├── platform         # All in-cluster platform components
+│   ├── base         #   reusable component bases (HelmRelease + source + ns)
+│   └── overlays     #   per-cluster presence/patches (admin / dev / prod)
 └── tenants          # Per-tenant namespaces, RBAC and workloads
     ├── base
-    ├── admin
-    ├── dev
-    └── prod
+    └── overlays     #   per-cluster tenant presence (admin / dev / prod)
 ```
 
-- **clusters/** — the per-cluster reconciliation entry points. Each cluster's
-  folder holds the Flux `Kustomization` objects that point at the `policies` and
-  `tenants` overlays for that environment.
-- **policies/** — guardrails applied to tenant namespaces. `base/kyverno`
-  installs the Kyverno controller (Helm), `base/policies` holds the
-  `ClusterPolicy` set (starting with the flux-multi-tenancy guardrail that blocks
-  cross-namespace source references), `base/policy-reporter` installs
-  [Policy Reporter](https://kyverno.github.io/policy-reporter/) with its web UI
-  for browsing results, and `base/network` holds a Cilium cluster-wide
-  default-deny `CiliumClusterwideNetworkPolicy`. Every cluster runs Kyverno.
+This follows the fleet-repo layout from the platform spec: Terraform owns
+infrastructure, **Flux owns everything inside Kubernetes**, organized as
+`platform/{base,overlays}` + `tenants/{base,overlays}`.
 
-  The `default-deny` policy denies all ingress/egress for **workload**
+- **clusters/** — the per-cluster reconciliation entry points. Each cluster's
+  folder holds the Flux `Kustomization` objects, one per platform component
+  plus `tenants`, pointing at that cluster's overlay. `flux-system/` is the
+  bootstrap (do not hand-edit).
+- **platform/** — every component Flux installs. `base/<component>` is a
+  Kustomize base (`namespace.yaml` + `source.yaml` `HelmRepository` +
+  `release.yaml` `HelmRelease`); `overlays/<cluster>/<component>` selects it for
+  a cluster and patches values. Components:
+  - **Live today:** `kyverno` (admission controller), `policies` (the
+    `ClusterPolicy` set — starting with the flux-multi-tenancy guardrail that
+    blocks cross-namespace source references), `policy-reporter`
+    ([Policy Reporter](https://kyverno.github.io/policy-reporter/) + web UI),
+    `network` (a Cilium cluster-wide default-deny
+    `CiliumClusterwideNetworkPolicy`), and `headlamp` (dashboard, **admin
+    cluster only**).
+  - **Scaffolded stubs (V1, wired but minimal — see `# TODO` markers):**
+    `cert-manager`, `external-secrets` (ESO → Vault), `tailscale-operator`,
+    `traefik`, `kube-prometheus-stack`, `netdata`, `vector`. These reconcile to
+    minimal installs; cluster-specific config (ClusterIssuers, SecretStores,
+    OAuth secrets, remote-write, Humio sink) is left to fill in.
+
+  The `network` default-deny policy denies all ingress/egress for **workload**
   namespaces while excluding the platform namespaces (`kube-system`,
   `flux-system`, `kyverno`, `policy-reporter`, ...) so the control plane, GitOps
   and admission webhooks keep working. It permits DNS and host/API-server
   traffic; everything else needs an explicit allow policy. Requires Cilium as the
   CNI (managed via Terraform).
 - **tenants/** — tenant definitions (namespaces, service accounts, RBAC and the
-  Flux sources/Kustomizations each tenant manages).
+  Flux sources/Kustomizations each tenant manages). Empty until the first tenant
+  is onboarded; `tenants` reconciles per cluster from `overlays/<cluster>`.
 
 `base` directories are Kustomize bases that the per-cluster overlays
-(`admin` / `dev` / `prod`) build on, keeping environment-specific configuration
-out of the shared definitions.
+(`overlays/admin` / `overlays/dev` / `overlays/prod`) build on, keeping
+environment-specific configuration out of the shared definitions.
 
 ### Reconcile order
 
-Per cluster, Flux applies two Kustomizations:
+Per cluster, Flux applies one `Kustomization` per component (auto-discovered
+from the loose YAML files under `clusters/<env>/`). `dependsOn` enforces
+ordering where it matters:
 
-1. `kyverno` → the Kyverno controller and CRDs
-2. `kyverno-policies` → the `ClusterPolicy` resources (`dependsOn: kyverno`, so
-   they only apply once the CRDs exist)
-3. `policy-reporter` → Policy Reporter + UI (`dependsOn: kyverno`)
-4. `network-policies` → Cilium cluster-wide default-deny (requires the
-   Cilium CRDs, which Terraform installs out-of-band)
+- `kyverno` → the Kyverno controller and CRDs
+- `kyverno-policies` → the `ClusterPolicy` resources (`dependsOn: kyverno`)
+- `policy-reporter` → Policy Reporter + UI (`dependsOn: kyverno`)
+- `network-policies` → Cilium cluster-wide default-deny (requires the Cilium
+  CRDs, which Terraform installs out-of-band)
+- `traefik` (`dependsOn: cert-manager`) and `tailscale-operator`
+  (`dependsOn: external-secrets`)
+- everything else (`cert-manager`, `external-secrets`, `kube-prometheus-stack`,
+  `netdata`, `vector`, `headlamp` on admin) reconciles independently
 
 Reach the Policy Reporter UI with a port-forward (no Ingress configured yet):
 
