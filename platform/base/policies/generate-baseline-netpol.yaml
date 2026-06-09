@@ -1,0 +1,77 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-baseline-netpol
+  annotations:
+    policies.kyverno.io/title: Generate Baseline Network Policy
+    policies.kyverno.io/category: Network
+    policies.kyverno.io/description: >-
+      For every tenant namespace, generate a CiliumNetworkPolicy that permits
+      same-namespace pod-to-pod traffic and DNS to CoreDNS. The cluster-wide
+      default-deny blocks everything else; this restores the minimum a normal
+      app needs. synchronize keeps the generated policy in sync and recreates
+      it if deleted.
+spec:
+  generateExisting: true
+  rules:
+    - name: baseline-cnp
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+      exclude:
+        any:
+          # Platform/system namespaces are exempt from default-deny and manage
+          # their own connectivity — don't inject a baseline policy there.
+          - resources:
+              kinds:
+                - Namespace
+              names:
+                - kube-system
+                - kube-node-lease
+                - kube-public
+                - flux-system
+                - kyverno
+                - policy-reporter
+                - headlamp
+                - cert-manager
+                - external-secrets
+                - tailscale
+                - traefik
+                - monitoring
+                - netdata
+                - vector
+      generate:
+        apiVersion: cilium.io/v2
+        kind: CiliumNetworkPolicy
+        name: baseline-allow
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          spec:
+            description: >-
+              Baseline connectivity managed by Kyverno: same-namespace traffic
+              and DNS. Add app-specific allow rules in separate policies.
+            endpointSelector: {}
+            ingress:
+              # All pods in this namespace may receive traffic from other pods
+              # in the same namespace.
+              - fromEndpoints:
+                  - {}
+            egress:
+              # All pods in this namespace may reach other pods in the same
+              # namespace.
+              - toEndpoints:
+                  - {}
+              # DNS resolution against CoreDNS.
+              - toEndpoints:
+                  - matchLabels:
+                      k8s:io.kubernetes.pod.namespace: kube-system
+                      k8s:k8s-app: kube-dns
+                toPorts:
+                  - ports:
+                      - port: "53"
+                        protocol: UDP
+                      - port: "53"
+                        protocol: TCP

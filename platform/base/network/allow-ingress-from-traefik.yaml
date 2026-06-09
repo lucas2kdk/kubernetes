@@ -1,0 +1,34 @@
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: allow-ingress-from-traefik
+spec:
+  description: >-
+    Allow ingress to workload namespaces from the Traefik ingress controller.
+    Without this, the default-deny policy blocks all traffic to pods behind the
+    ingress. Additive allow — pairs with the per-namespace baseline CNP that
+    permits same-namespace traffic.
+  # Mirror the default-deny selector: applies to workload namespaces only, not
+  # the platform-managed namespaces (which are exempt from default-deny anyway).
+  endpointSelector:
+    matchExpressions:
+      - key: k8s:io.kubernetes.pod.namespace
+        operator: NotIn
+        values:
+          - kube-system
+          - kube-node-lease
+          - kube-public
+          - flux-system
+          - kyverno
+          - policy-reporter
+          - cert-manager
+          - external-secrets
+          - tailscale
+          - traefik
+          - monitoring
+          - netdata
+          - vector
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: traefik

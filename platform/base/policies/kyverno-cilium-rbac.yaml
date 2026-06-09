@@ -1,0 +1,25 @@
+# Kyverno's controllers only get RBAC for built-in types by default. To let the
+# generate policy create/manage CiliumNetworkPolicy resources, grant the verbs
+# via ClusterRoles that aggregate into Kyverno's background and admission
+# controllers (the rbac.kyverno.io/aggregate-to-* labels).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kyverno:manage-ciliumnetworkpolicies
+  labels:
+    app.kubernetes.io/part-of: kyverno
+    rbac.kyverno.io/aggregate-to-background-controller: "true"
+    rbac.kyverno.io/aggregate-to-admission-controller: "true"
+rules:
+  - apiGroups:
+      - cilium.io
+    resources:
+      - ciliumnetworkpolicies
+    verbs:
+      - create
+      - update
+      - patch
+      - delete
+      - get
+      - list
+      - watch

@@ -9,3 +9,7 @@ resources:
   - require-requests.yaml
   - disallow-latest-tag.yaml
   - require-pod-probes.yaml
+  # Network: generate a baseline same-namespace + DNS CiliumNetworkPolicy for
+  # every tenant namespace (plus the RBAC Kyverno needs to manage them).
+  - kyverno-cilium-rbac.yaml
+  - generate-baseline-netpol.yaml
