@@ -7,7 +7,6 @@
   ],
   "timezone": "Europe/Copenhagen",
   "schedule": ["before 7am on monday"],
-  "labels": ["dependencies", "renovate"],
   "prHourlyLimit": 4,
   "prConcurrentLimit": 10,
   "flux": {
