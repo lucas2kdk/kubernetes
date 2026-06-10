@@ -4,23 +4,22 @@ Flux multi-tenancy GitOps repository, based on the
 [fluxcd/flux2-multi-tenancy](https://github.com/fluxcd/flux2-multi-tenancy)
 example.
 
-It manages three clusters — **admin**, **dev**, and **prod** — from a single
-Git repository, with a platform admin defining the tenants and the policies that
-constrain them.
+It manages the cluster fleet — currently **prod-fsn** (Hetzner Falkenstein,
+bare-metal Talos) — from a single Git repository, with a platform admin defining
+the tenants and the policies that constrain them. The layout stays per-cluster
+so new regions join as new `clusters/<name>` + `overlays/<name>` entries.
 
 ## Repository structure
 
 ```
 ├── clusters         # Flux entry point per cluster
-│   ├── admin        #   one Flux Kustomization per platform component + tenants
-│   ├── dev
-│   └── prod
+│   └── prod-fsn     #   one Flux Kustomization per platform component + tenants
 ├── platform         # All in-cluster platform components
 │   ├── base         #   reusable component bases (HelmRelease + source + ns)
-│   └── overlays     #   per-cluster presence/patches (admin / dev / prod)
+│   └── overlays     #   per-cluster presence/patches (prod-fsn)
 └── tenants          # Per-tenant namespaces, RBAC and workloads
     ├── base
-    └── overlays     #   per-cluster tenant presence (admin / dev / prod)
+    └── overlays     #   per-cluster tenant presence (prod-fsn)
 ```
 
 This follows the fleet-repo layout from the platform spec: Terraform owns
@@ -40,8 +39,8 @@ infrastructure, **Flux owns everything inside Kubernetes**, organized as
     blocks cross-namespace source references), `policy-reporter`
     ([Policy Reporter](https://kyverno.github.io/policy-reporter/) + web UI),
     `network` (a Cilium cluster-wide default-deny
-    `CiliumClusterwideNetworkPolicy`), `headlamp` (dashboard, **admin
-    cluster only**), `external-secrets` (ESO → Vault), `cert-manager` +
+    `CiliumClusterwideNetworkPolicy`), `headlamp` (dashboard),
+    `external-secrets` (ESO → Vault), `cert-manager` +
     `cert-manager-issuers` (Let's Encrypt via Cloudflare DNS-01), `traefik`
     (ingress, ClusterIP-only for now), and `tailscale-operator` (API-server
     proxy in auth mode — see [Tailscale access](#tailscale-access-api-server-proxy)).
@@ -61,7 +60,7 @@ infrastructure, **Flux owns everything inside Kubernetes**, organized as
   is onboarded; `tenants` reconciles per cluster from `overlays/<cluster>`.
 
 `base` directories are Kustomize bases that the per-cluster overlays
-(`overlays/admin` / `overlays/dev` / `overlays/prod`) build on, keeping
+(`overlays/prod-fsn`, plus future clusters) build on, keeping
 environment-specific configuration out of the shared definitions.
 
 ### Reconcile order
@@ -81,7 +80,7 @@ ordering where it matters:
 - `traefik` (`dependsOn: cert-manager`) and `tailscale-operator`
   (`dependsOn: external-secrets`)
 - everything else (`cert-manager`, `external-secrets`, `kube-prometheus-stack`,
-  `netdata`, `vector`, `headlamp` on admin) reconciles independently
+  `netdata`, `vector`, `headlamp`) reconciles independently
 
 Reach the Policy Reporter UI with a port-forward (no Ingress configured yet):
 
@@ -102,8 +101,8 @@ carries your real login. No per-user kubeconfig secrets, no public API
 endpoints.
 
 - Each cluster's operator device is the API endpoint:
-  `k8s-api-admin` / `k8s-api-dev` / `k8s-api-prod` (hostname patched per
-  cluster in `platform/overlays/<cluster>/tailscale-operator/`).
+  `k8s-api-prod-fsn` (hostname patched per cluster in
+  `platform/overlays/<cluster>/tailscale-operator/`).
 - The operator's OAuth client credentials live in Vault at
   `secret/platform/tailscale` (keys `client_id`, `client_secret`), synced by
   ESO into the `operator-oauth` Secret. The OAuth client needs the
@@ -148,7 +147,7 @@ when pasting.
 Generate a kubeconfig entry per cluster and verify the identity mapping:
 
 ```bash
-tailscale configure kubeconfig k8s-api-dev
+tailscale configure kubeconfig k8s-api-prod-fsn
 kubectl auth whoami                      # tailnet login + group `maintainers`
 kubectl auth can-i delete pods -A        # yes
 kubectl auth can-i get secrets -A        # no
@@ -156,40 +155,19 @@ kubectl auth can-i get secrets -A        # no
 
 ## Bootstrap
 
-Run once per cluster to install Flux and point it at that cluster's path. Set
-your `kubectl` context to the target cluster first, and export a GitHub PAT with
-`repo` scope:
+Flux is normally installed by Terraform (`flux_bootstrap_git` in the
+bootstrap repo's `cluster-addons` module) as part of `terraform apply` — no
+manual step. To (re)bootstrap by hand instead, set your `kubectl` context to
+the target cluster and export a GitHub PAT with `repo` scope:
 
 ```bash
 export GITHUB_TOKEN=<your-pat>
-```
-
-```bash
-# admin
-kubectl config use-context <admin-context>
+kubectl config use-context <prod-fsn-context>
 flux bootstrap github \
   --owner=lucas2kdk \
   --repository=kubernetes \
   --branch=main \
-  --path=clusters/admin \
-  --personal
-
-# dev
-kubectl config use-context <dev-context>
-flux bootstrap github \
-  --owner=lucas2kdk \
-  --repository=kubernetes \
-  --branch=main \
-  --path=clusters/dev \
-  --personal
-
-# prod
-kubectl config use-context <prod-context>
-flux bootstrap github \
-  --owner=lucas2kdk \
-  --repository=kubernetes \
-  --branch=main \
-  --path=clusters/prod \
+  --path=clusters/prod-fsn \
   --personal
 ```
 
