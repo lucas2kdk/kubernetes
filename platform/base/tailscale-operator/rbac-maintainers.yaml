@@ -1,0 +1,62 @@
+# RBAC for humans arriving through the Tailscale API-server proxy (auth mode).
+# The proxy impersonates the tailnet identity; the admin-console ACL grant
+# attaches group `maintainers` (see README "Tailscale access"), so these
+# bindings are what a platform human can actually do. Per-tenant groups
+# (tenant:<name>) arrive with tenant onboarding.
+#
+# Deliberately excluded for now: Secret read (use ESO/Vault paths instead) and
+# Flux suspend/resume (kustomize.toolkit.fluxcd.io patch) — add only if
+# incident work proves console access insufficient.
+---
+# Cluster-wide read. The built-in `view` ClusterRole excludes Secrets by design.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: maintainers-view
+subjects:
+  - kind: Group
+    name: maintainers
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+# Curated operational verbs for incidents. Flux still owns desired state —
+# these are for fixing the world, not changing it.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: maintainers-operations
+rules:
+  # Kill a wedged pod; exec/port-forward for debugging.
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["delete"]
+  - apiGroups: [""]
+    resources: ["pods/exec", "pods/portforward", "pods/eviction"]
+    verbs: ["create"]
+  # Rollout-restart (patch) and manual scale during incidents.
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets", "daemonsets"]
+    verbs: ["patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale", "statefulsets/scale"]
+    verbs: ["get", "update", "patch"]
+  # Cordon/uncordon = nodes patch; drain = nodes patch + pods/eviction create.
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: maintainers-operations
+subjects:
+  - kind: Group
+    name: maintainers
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: maintainers-operations
+  apiGroup: rbac.authorization.k8s.io

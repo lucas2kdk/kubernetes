@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: tailscale-operator
-      version: "1.x" # TODO: pin exact version (Renovate-managed)
+      version: "1.98.4" # Renovate-managed
       sourceRef:
         kind: HelmRepository
         name: tailscale
@@ -22,13 +22,21 @@ spec:
       retries: 3
   values:
     # API-server proxy in auth mode so the proxy impersonates the tailnet
-    # identity against the Kubernetes API and standard RBAC applies.
+    # identity against the Kubernetes API and standard RBAC applies. The proxy
+    # runs in-process: the operator device IS the API endpoint, so its hostname
+    # is the kubectl server name and its tag is the ACL grant's dst.
     apiServerProxyConfig:
       mode: "true"
       allowImpersonation: "true"
+    operatorConfig:
+      # Must match the OAuth client's tags and the tagOwners in the admin
+      # console ACL (see README "Tailscale access" for the canonical policy).
+      defaultTags:
+        - tag:k8s-operator
+      # Each cluster's API proxy needs a distinct tailnet name; patched in
+      # platform/overlays/<cluster>/tailscale-operator/.
+      hostname: k8s-api-REPLACE-IN-OVERLAY
     # OAuth client credentials come from Vault via External Secrets: the
     # ExternalSecret (external-secret.yaml) syncs secret/platform/tailscale into the
     # `operator-oauth` Secret. oauth.clientId/clientSecret are intentionally left unset
     # so the chart references that pre-existing secret (keys: client_id, client_secret).
-    # TODO: tag the operator device and wire ACL grants -> impersonation groups
-    # (developers, maintainers) per the access model.

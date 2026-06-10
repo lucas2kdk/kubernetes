@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: traefik
-      version: "33.x" # TODO: pin exact version (Renovate-managed)
+      version: "40.3.0" # Renovate-managed
       sourceRef:
         kind: HelmRepository
         name: traefik
@@ -20,6 +20,26 @@ spec:
   upgrade:
     remediation:
       retries: 3
-  values: {}
-    # TODO: cloud LoadBalancer service (DO LB), default TLS via cert-manager
-    # ClusterIssuer. Migrate to Cilium Gateway API later (deferred).
+  values:
+    # Bare metal, no LB story yet: ClusterIP only. Reachable in-cluster or via
+    # port-forward; LB-IPAM / Gateway API exposure is a later phase.
+    service:
+      spec:
+        type: ClusterIP
+    ports:
+      web:
+        http:
+          redirections:
+            entryPoint:
+              to: websecure
+              scheme: https
+              permanent: true
+    # No default TLS certificate yet — Traefik serves its self-signed fallback
+    # and nothing external terminates here. When exposure lands: wildcard
+    # *.rosenvold.tech Certificate + tlsStore.default.secretName, and flip
+    # clusters/*/traefik.yaml dependsOn to cert-manager-issuers.
+    # kubernetesGateway stays disabled (chart default): Cilium owns Gateway API.
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi

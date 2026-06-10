@@ -40,13 +40,15 @@ infrastructure, **Flux owns everything inside Kubernetes**, organized as
     blocks cross-namespace source references), `policy-reporter`
     ([Policy Reporter](https://kyverno.github.io/policy-reporter/) + web UI),
     `network` (a Cilium cluster-wide default-deny
-    `CiliumClusterwideNetworkPolicy`), and `headlamp` (dashboard, **admin
-    cluster only**).
+    `CiliumClusterwideNetworkPolicy`), `headlamp` (dashboard, **admin
+    cluster only**), `external-secrets` (ESO → Vault), `cert-manager` +
+    `cert-manager-issuers` (Let's Encrypt via Cloudflare DNS-01), `traefik`
+    (ingress, ClusterIP-only for now), and `tailscale-operator` (API-server
+    proxy in auth mode — see [Tailscale access](#tailscale-access-api-server-proxy)).
   - **Scaffolded stubs (V1, wired but minimal — see `# TODO` markers):**
-    `cert-manager`, `external-secrets` (ESO → Vault), `tailscale-operator`,
-    `traefik`, `kube-prometheus-stack`, `netdata`, `vector`. These reconcile to
-    minimal installs; cluster-specific config (ClusterIssuers, SecretStores,
-    OAuth secrets, remote-write, Humio sink) is left to fill in.
+    `kube-prometheus-stack`, `netdata`, `vector`. These reconcile to
+    minimal installs; cluster-specific config (remote-write, Humio sink) is
+    left to fill in.
 
   The `network` default-deny policy denies all ingress/egress for **workload**
   namespaces while excluding the platform namespaces (`kube-system`,
@@ -73,6 +75,9 @@ ordering where it matters:
 - `policy-reporter` → Policy Reporter + UI (`dependsOn: kyverno`)
 - `network-policies` → Cilium cluster-wide default-deny (requires the Cilium
   CRDs, which Terraform installs out-of-band)
+- `cert-manager-issuers` → the Let's Encrypt `ClusterIssuer`s + the
+  ESO-synced Cloudflare token (`dependsOn: cert-manager, external-secrets`;
+  `wait: true`, so it only reads Ready once the issuers register with ACME)
 - `traefik` (`dependsOn: cert-manager`) and `tailscale-operator`
   (`dependsOn: external-secrets`)
 - everything else (`cert-manager`, `external-secrets`, `kube-prometheus-stack`,
@@ -87,6 +92,67 @@ kubectl -n policy-reporter port-forward svc/policy-reporter-ui 8082:8080
 
 > **Note:** The cluster CNI (Cilium) and its Hubble observability layer are
 > managed out-of-band via Terraform, not by this repository.
+
+## Tailscale access (API-server proxy)
+
+Cluster access runs through the Tailscale operator's API-server proxy in
+**auth mode**: the proxy authenticates your tailnet identity and impersonates
+it against the Kubernetes API, so standard RBAC applies and the audit trail
+carries your real login. No per-user kubeconfig secrets, no public API
+endpoints.
+
+- Each cluster's operator device is the API endpoint:
+  `k8s-api-admin` / `k8s-api-dev` / `k8s-api-prod` (hostname patched per
+  cluster in `platform/overlays/<cluster>/tailscale-operator/`).
+- The operator's OAuth client credentials live in Vault at
+  `secret/platform/tailscale` (keys `client_id`, `client_secret`), synced by
+  ESO into the `operator-oauth` Secret. The OAuth client needs the
+  **Devices Core (write)** and **Auth Keys (write)** scopes and the
+  `tag:k8s-operator` + `tag:k8s` tags.
+- RBAC: the ACL grant below maps your tailnet identity to the Kubernetes group
+  `maintainers`, bound by `platform/base/tailscale-operator/rbac-maintainers.yaml`
+  to cluster-wide `view` plus curated operational verbs (pod delete/exec/
+  port-forward, rollout restart/scale, cordon/drain). No Secret read.
+  Per-tenant groups (`tenant:<name>`) arrive with tenant onboarding.
+
+### Canonical ACL policy (hand-pasted in the admin console)
+
+The tailnet ACLs are edited in the Tailscale admin console; this is the
+canonical copy. Verify the grant syntax against the
+[Tailscale KB](https://tailscale.com/kb/1437/kubernetes-operator-api-server-proxy)
+when pasting.
+
+```jsonc
+{
+  "tagOwners": {
+    "tag:k8s-operator": ["autogroup:admin"],
+    "tag:k8s": ["tag:k8s-operator"] // operator must own the per-service proxy tag
+  },
+  "grants": [
+    {
+      // tailnet identity -> Kubernetes group `maintainers` on every cluster's
+      // API proxy (in-process proxy = the operator device itself)
+      "src": ["lucas@rosenvold.tech"],
+      "dst": ["tag:k8s-operator"],
+      "ip": ["443"],
+      "app": {
+        "tailscale.com/cap/kubernetes": [
+          {"impersonate": {"groups": ["maintainers"]}}
+        ]
+      }
+    }
+  ]
+}
+```
+
+Generate a kubeconfig entry per cluster and verify the identity mapping:
+
+```bash
+tailscale configure kubeconfig k8s-api-dev
+kubectl auth whoami                      # tailnet login + group `maintainers`
+kubectl auth can-i delete pods -A        # yes
+kubectl auth can-i get secrets -A        # no
+```
 
 ## Bootstrap
 

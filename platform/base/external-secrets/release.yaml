@@ -9,7 +9,10 @@ spec:
   chart:
     spec:
       chart: external-secrets
-      version: "0.x" # TODO: pin exact version (Renovate-managed)
+      version: "0.20.4" # Renovate-managed. 0.20.x serves external-secrets.io/v1;
+      # the 2.x chart line drops v1beta1 — migrate the remaining v1beta1
+      # manifests (cluster-secret-store.yaml, tailscale external-secret.yaml)
+      # before taking that bump.
       sourceRef:
         kind: HelmRepository
         name: external-secrets
