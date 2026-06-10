@@ -1,4 +1,9 @@
+# PSA privileged: the node-metrics agent needs host namespaces and hostPath mounts,
+# which Talos's cluster-wide "baseline" enforcement rejects. Kyverno policies
+# still apply to this namespace.
 apiVersion: v1
 kind: Namespace
 metadata:
   name: netdata
+  labels:
+    pod-security.kubernetes.io/enforce: privileged

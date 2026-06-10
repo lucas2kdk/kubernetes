@@ -1,4 +1,9 @@
+# PSA privileged: node-exporter needs hostNetwork/hostPID/hostPath/hostPort,
+# which Talos's cluster-wide "baseline" enforcement rejects. Kyverno policies
+# still apply to this namespace.
 apiVersion: v1
 kind: Namespace
 metadata:
   name: monitoring
+  labels:
+    pod-security.kubernetes.io/enforce: privileged

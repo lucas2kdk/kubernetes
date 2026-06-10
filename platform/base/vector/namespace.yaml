@@ -1,4 +1,9 @@
+# PSA privileged: the log-shipping agent mounts hostPath volumes (/var/log, /var/lib, procfs, sysfs),
+# which Talos's cluster-wide "baseline" enforcement rejects. Kyverno policies
+# still apply to this namespace.
 apiVersion: v1
 kind: Namespace
 metadata:
   name: vector
+  labels:
+    pod-security.kubernetes.io/enforce: privileged
