@@ -4,12 +4,34 @@ metadata:
   name: deny-cloud-metadata
 spec:
   description: >-
-    Cluster-wide deny of egress to the link-local cloud/instance metadata
-    endpoint (169.254.169.254). Anti-SSRF defense in depth: a compromised
-    workload cannot reach node/cloud metadata to harvest credentials. Deny
-    rules take precedence over allow rules in Cilium, so this also covers the
-    platform namespaces that are exempt from the default-deny policy.
-  endpointSelector: {}
+    Deny egress to the link-local cloud/instance metadata endpoint
+    (169.254.169.254) from workload namespaces. Anti-SSRF defense in depth: a
+    compromised workload cannot reach node/cloud metadata to harvest
+    credentials. Scoped with the same namespace exclusions as default-deny —
+    NOT endpointSelector: {} — because in Cilium ANY rule that selects an
+    endpoint flips it into default-deny for that direction. An empty selector
+    put every pod (including kube-system, flux-system, kyverno) into
+    egress-deny with no allow rules, breaking DNS, webhooks, and Flux's own
+    GitHub access cluster-wide. Extending the metadata deny to platform
+    namespaces is V2 work, done with explicit allow policies in place.
+  endpointSelector:
+    matchExpressions:
+      - key: k8s:io.kubernetes.pod.namespace
+        operator: NotIn
+        values:
+          - kube-system
+          - kube-node-lease
+          - kube-public
+          - flux-system
+          - kyverno
+          - policy-reporter
+          - cert-manager
+          - external-secrets
+          - tailscale
+          - traefik
+          - monitoring
+          - netdata
+          - vector
   egressDeny:
     - toCIDR:
         - 169.254.169.254/32
