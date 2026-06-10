@@ -1,0 +1,16 @@
+# Vault >=1.16 removed offline JWT validation (pem_keys is ignored) and always
+# validates logins via the TokenReview API. With no token_reviewer_jwt
+# configured, Vault authenticates the review with the login JWT itself — which
+# only works if ESO's ServiceAccount may create TokenReviews.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: external-secrets-token-review
+subjects:
+  - kind: ServiceAccount
+    name: external-secrets
+    namespace: external-secrets
+roleRef:
+  kind: ClusterRole
+  name: system:auth-delegator
+  apiGroup: rbac.authorization.k8s.io
