@@ -1,0 +1,9 @@
+# SecretStores only — split from the external-secrets component because the
+# ClusterSecretStore CR cannot be applied (server-side dry-run fails on the
+# missing CRD) until the ESO HelmRelease has installed. The Flux Kustomization
+# for this component dependsOn external-secrets, mirroring the
+# kyverno/kyverno-policies split.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cluster-secret-store.yaml

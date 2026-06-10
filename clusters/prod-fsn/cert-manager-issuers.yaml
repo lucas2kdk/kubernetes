@@ -6,7 +6,7 @@ metadata:
 spec:
   dependsOn:
     - name: cert-manager
-    - name: external-secrets
+    - name: external-secrets-stores
   interval: 1h
   retryInterval: 2m
   timeout: 5m
