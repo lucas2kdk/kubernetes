@@ -28,6 +28,17 @@ spec:
       labels:
         app: tsidp
     spec:
+      # The kubelet creates the hostPath root-owned; the image runs as
+      # app (uid/gid 1001), so hand it the state dir before start.
+      initContainers:
+        - name: chown-state
+          image: ghcr.io/tailscale/tsidp:latest
+          command: ["/bin/sh", "-c", "chown -R 1001:1001 /data"]
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: state
+              mountPath: /data
       containers:
         - name: tsidp
           image: ghcr.io/tailscale/tsidp:latest
