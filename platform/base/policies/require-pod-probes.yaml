@@ -28,6 +28,7 @@ spec:
                 - kyverno
                 - policy-reporter
                 - headlamp
+                - tsidp
                 - cert-manager
                 - external-secrets
                 - tailscale

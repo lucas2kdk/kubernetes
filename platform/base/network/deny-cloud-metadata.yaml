@@ -32,6 +32,8 @@ spec:
           - monitoring
           - netdata
           - vector
+          - headlamp
+          - tsidp
   egressDeny:
     - toCIDR:
         - 169.254.169.254/32

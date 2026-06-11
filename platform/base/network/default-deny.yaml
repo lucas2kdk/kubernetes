@@ -34,6 +34,8 @@ spec:
           - monitoring
           - netdata
           - vector
+          - headlamp
+          - tsidp
   ingress:
     # Allow node-level traffic (kubelet health/liveness probes) and the API server.
     - fromEntities:
