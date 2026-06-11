@@ -1,0 +1,8 @@
+# PSA privileged: tsidp persists tailnet + OIDC-client state on a hostPath
+# (no CSI on bare-metal Talos yet), which "baseline" enforcement rejects.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tsidp
+  labels:
+    pod-security.kubernetes.io/enforce: privileged

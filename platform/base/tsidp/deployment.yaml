@@ -1,0 +1,59 @@
+# tsidp — Tailscale OIDC identity provider (https://github.com/tailscale/tsidp).
+# Joins the tailnet as idp.<tailnet>.ts.net (tag:tsidp) and lets tailnet
+# identity drive OIDC logins (Headlamp first).
+#
+# Funnel is on for one reason: the kube-apiserver validates OIDC tokens by
+# fetching the issuer's discovery doc + JWKS, and the node has no tailnet
+# access (operator-mode only, no host tailscaled) — Funnel makes those public
+# endpoints reachable. Actual logins still require tailnet identity (tsidp
+# resolves the caller via whois, which Funnel traffic does not have).
+#
+# State on a hostPath (single-node cluster, no CSI): tsnet node identity plus
+# dynamically registered OIDC clients. Lost only on cluster rebuild —
+# re-register clients then (see the bootstrap repo's tsidp runbook).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tsidp
+  namespace: tsidp
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # single tailnet identity — never two instances at once
+  selector:
+    matchLabels:
+      app: tsidp
+  template:
+    metadata:
+      labels:
+        app: tsidp
+    spec:
+      containers:
+        - name: tsidp
+          image: ghcr.io/tailscale/tsidp:latest
+          envFrom:
+            - secretRef:
+                name: tsidp-auth # TS_AUTHKEY
+          env:
+            - name: TAILSCALE_USE_WIP_CODE # required while tsidp < 1.0
+              value: "1"
+            - name: TS_HOSTNAME
+              value: idp
+            - name: TS_STATE_DIR
+              value: /data
+            - name: TS_ADVERTISE_TAGS
+              value: tag:tsidp
+            - name: TSIDP_USE_FUNNEL
+              value: "1"
+          volumeMounts:
+            - name: state
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+      volumes:
+        - name: state
+          hostPath:
+            path: /var/mnt/tsidp
+            type: DirectoryOrCreate

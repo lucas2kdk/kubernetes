@@ -20,3 +20,20 @@ spec:
   upgrade:
     remediation:
       retries: 3
+  values:
+    config:
+      oidc:
+        # Client credentials come from the headlamp-oidc Secret via valuesFrom
+        # below. Issuer is tsidp; the kube-apiserver trusts it through the
+        # oidc-* flags set in the Talos machine config (bootstrap repo).
+        issuerURL: https://idp.penguin-bigeye.ts.net
+        scopes: "openid,email,profile"
+  valuesFrom:
+    - kind: Secret
+      name: headlamp-oidc
+      valuesKey: client_id
+      targetPath: config.oidc.clientID
+    - kind: Secret
+      name: headlamp-oidc
+      valuesKey: client_secret
+      targetPath: config.oidc.clientSecret

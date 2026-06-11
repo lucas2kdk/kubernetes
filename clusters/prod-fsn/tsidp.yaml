@@ -1,7 +1,7 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: headlamp
+  name: tsidp
   namespace: flux-system
 spec:
   dependsOn:
@@ -12,6 +12,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./platform/overlays/prod-fsn/headlamp
+  path: ./platform/overlays/prod-fsn/tsidp
   prune: true
   wait: true

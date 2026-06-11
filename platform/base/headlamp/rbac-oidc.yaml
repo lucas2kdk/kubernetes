@@ -1,0 +1,30 @@
+# RBAC for OIDC logins via tsidp. The kube-apiserver maps the id_token's
+# email claim to the username (oidc-username-claim=email, set in the Talos
+# machine config by the bootstrap repo), so OIDC users arrive as their email.
+# Mirrors the maintainers model used by the Tailscale API-server proxy: read
+# everything, curated ops verbs, no Secret read.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-lucas-view
+subjects:
+  - kind: User
+    name: lucas@rosenvold.tech
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-lucas-operations
+subjects:
+  - kind: User
+    name: lucas@rosenvold.tech
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: maintainers-operations
+  apiGroup: rbac.authorization.k8s.io
