@@ -28,9 +28,16 @@ spec:
         # oidc-* flags set in the Talos machine config (bootstrap repo).
         issuerURL: https://idp.penguin-bigeye.ts.net
         scopes: "openid,email,profile"
-    # Plugins are fetched from Artifact Hub at pod start by an init container
-    # (node:lts-alpine) and dropped into config.pluginsDir. Versions are pinned;
-    # bump them deliberately when upstream releases.
+      # The plugin manager runs as a SIDECAR (not an init container) and takes
+      # ~12s to download plugins, while the backend scans pluginsDir once at
+      # startup — so without this the freshly-installed plugins never appear in
+      # the /plugins list and the frontend won't load them. watchPlugins makes
+      # the backend re-read the dir as the sidecar (which itself runs --watch)
+      # writes them, fixing the race on every pod start.
+      watchPlugins: true
+    # Plugins are fetched from Artifact Hub at pod start by the chart's plugin
+    # manager sidecar (node:lts-alpine) and dropped into config.pluginsDir.
+    # Versions are pinned; bump them deliberately when upstream releases.
     pluginsManager:
       enabled: true
       configContent: |
