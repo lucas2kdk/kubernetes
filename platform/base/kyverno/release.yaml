@@ -22,3 +22,26 @@ spec:
     crds: CreateReplace
     remediation:
       retries: 3
+  values:
+    features:
+      # Fail-closed webhooks assume the admission controller outlives any one
+      # node — impossible on a single-node cluster, where every drain evicts
+      # Kyverno and its webhook then rejects kubelet's final pod deletions,
+      # deadlocking the drain (hit 2026-06-11 during a Talos upgrade; see
+      # bootstrap repo docs/longhorn.md). Force Ignore so node lifecycle never
+      # depends on Kyverno being up. When the cluster grows to 3+ nodes, drop
+      # this and set admissionController.replicas: 3 instead to get fail-closed
+      # enforcement back without the deadlock.
+      forceFailurePolicyIgnore:
+        enabled: true
+    config:
+      webhooks:
+        namespaceSelector:
+          matchExpressions:
+            - key: kubernetes.io/metadata.name
+              operator: NotIn
+              values:
+                - kube-system # chart default; this list replaces it, so keep it
+                # Longhorn recommends keeping policy engines out of its
+                # namespace so volume attach/rebuild is never gated on them.
+                - longhorn-system
