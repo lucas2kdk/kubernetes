@@ -28,6 +28,22 @@ spec:
         # oidc-* flags set in the Talos machine config (bootstrap repo).
         issuerURL: https://idp.penguin-bigeye.ts.net
         scopes: "openid,email,profile"
+    # Plugins are fetched from Artifact Hub at pod start by an init container
+    # (node:lts-alpine) and dropped into config.pluginsDir. Versions are pinned;
+    # bump them deliberately when upstream releases.
+    pluginsManager:
+      enabled: true
+      configContent: |
+        plugins:
+          - name: flux
+            source: https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_flux
+            version: 0.6.0
+          - name: cert-manager
+            source: https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_cert-manager
+            version: 0.1.1
+        installOptions:
+          parallel: true
+          maxConcurrent: 2
   valuesFrom:
     - kind: Secret
       name: headlamp-oidc
