@@ -1,0 +1,22 @@
+# Expose Headlamp on the tailnet only — per the platform spec there is no
+# Traefik route, cert-manager cert, or public DNS for it; zero public attack
+# surface. The Tailscale operator provisions a proxy device named "headlamp"
+# (tag:k8s, proxyConfig.defaultTags) serving HTTPS with a tailnet cert:
+# https://headlamp.<tailnet>.ts.net
+# Requires MagicDNS + HTTPS certificates enabled on the tailnet, and an ACL
+# that lets your device reach tag:k8s:443.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: headlamp
+  namespace: headlamp
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service:
+      name: headlamp
+      port:
+        number: 80
+  tls:
+    - hosts:
+        - headlamp
