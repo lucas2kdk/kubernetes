@@ -1,15 +1,21 @@
 # RBAC for OIDC logins via tsidp. The kube-apiserver maps the id_token's
-# email claim to the username (oidc-username-claim=email, set in the Talos
-# machine config by the bootstrap repo), so OIDC users arrive as their email.
-# Mirrors the maintainers model used by the Tailscale API-server proxy: read
-# everything, curated ops verbs, no Secret read.
+# email claim to the username (oidc-username-claim=email) and the groups claim
+# to groups (oidc-groups-claim=groups, oidc-groups-prefix=oidc:), both set in
+# the Talos machine config by the bootstrap repo.
+#
+# Identity model: cluster access is granted to an OIDC GROUP, not individual
+# emails. tsidp injects the group via a tailscale.com/cap/tsidp extraClaims
+# grant in the tailnet policy (group:k8s-admins -> {"groups":["k8s-admins"]}),
+# so adding a teammate is just putting them in group:k8s-admins in the tailnet
+# policy — no change here. Mirrors the maintainers model: read everything,
+# curated ops verbs, no Secret read.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: oidc-lucas-view
+  name: oidc-k8s-admins-view
 subjects:
-  - kind: User
-    name: lucas@rosenvold.tech
+  - kind: Group
+    name: oidc:k8s-admins
     apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
@@ -19,12 +25,42 @@ roleRef:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: oidc-lucas-operations
+  name: oidc-k8s-admins-operations
 subjects:
-  - kind: User
-    name: lucas@rosenvold.tech
+  - kind: Group
+    name: oidc:k8s-admins
     apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: ClusterRole
   name: maintainers-operations
+  apiGroup: rbac.authorization.k8s.io
+---
+# The built-in `view` ClusterRole only covers namespaced resources plus node
+# *metrics* (metrics.k8s.io), not core cluster-scoped resources. Without this,
+# Headlamp's overview shows "0/0 Ready" nodes and blank cluster CPU/memory
+# because `list nodes` is forbidden. Closes that gap to match the
+# "read everything, no Secret read" intent above.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: oidc-cluster-read
+rules:
+  - apiGroups: [""]
+    resources: [nodes, persistentvolumes]
+    verbs: [get, list, watch]
+  - apiGroups: [storage.k8s.io]
+    resources: [storageclasses, volumeattachments, csinodes]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-k8s-admins-cluster-read
+subjects:
+  - kind: Group
+    name: oidc:k8s-admins
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: oidc-cluster-read
   apiGroup: rbac.authorization.k8s.io
