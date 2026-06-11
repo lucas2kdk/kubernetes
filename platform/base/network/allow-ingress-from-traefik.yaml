@@ -28,6 +28,8 @@ spec:
           - monitoring
           - netdata
           - vector
+          - headlamp
+          - tsidp
   ingress:
     - fromEndpoints:
         - matchLabels:
