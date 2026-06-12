@@ -6,8 +6,6 @@ resources:
   - release.yaml
   - external-secret.yaml
   - ingress.yaml
-  - flux-podmonitor.yaml
-  - longhorn-servicemonitor.yaml
   - dashboards/15661-k8s.yaml
   - dashboards/16714-flux2.yaml
   - dashboards/11001-cert-manager.yaml
