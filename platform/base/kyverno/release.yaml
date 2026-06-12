@@ -30,15 +30,37 @@ spec:
     admissionController:
       serviceMonitor:
         enabled: true
+    # The chart-default 128Mi memory limit is smaller than the ~120MB kyverno
+    # binary, so the kernel satisfies the limit by evicting the controller's
+    # own executable page cache and re-reading it from disk forever (no OOM
+    # kill, memory.events:max in the millions). On 2026-06-12 the background +
+    # reports controllers read ~3TB this way, pinning the HDD system disk at
+    # 100% util and stalling etcd → apiserver brownouts → CSI/PVC failures.
+    # Limits must stay comfortably above binary size + heap.
     backgroundController:
       serviceMonitor:
         enabled: true
+      resources:
+        requests:
+          memory: 128Mi
+        limits:
+          memory: 512Mi
     cleanupController:
       serviceMonitor:
         enabled: true
+      resources:
+        requests:
+          memory: 128Mi
+        limits:
+          memory: 512Mi
     reportsController:
       serviceMonitor:
         enabled: true
+      resources:
+        requests:
+          memory: 128Mi
+        limits:
+          memory: 512Mi
     features:
       # Fail-closed webhooks assume the admission controller outlives any one
       # node — impossible on a single-node cluster, where every drain evicts
