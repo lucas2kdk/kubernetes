@@ -43,6 +43,12 @@ spec:
                 - monitoring
                 - netdata
                 - vector
+                # Must stay in lockstep with the default-deny CCNP exclusions:
+                # longhorn-system is excluded there, so it gets no kube-apiserver
+                # egress allow — a baseline CNP here flips it into default-deny
+                # and cuts the CSI sidecars off from the apiserver (2026-06-12
+                # outage: provisioner crash-looped, PVCs stuck Pending).
+                - longhorn-system
       generate:
         apiVersion: cilium.io/v2
         kind: CiliumNetworkPolicy
