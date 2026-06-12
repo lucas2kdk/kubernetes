@@ -4,3 +4,12 @@ resources:
   - namespace.yaml
   - source.yaml
   - release.yaml
+  - external-secret.yaml
+  - ingress.yaml
+  - flux-podmonitor.yaml
+  - longhorn-servicemonitor.yaml
+  - dashboards/15661-k8s.yaml
+  - dashboards/16714-flux2.yaml
+  - dashboards/11001-cert-manager.yaml
+  - dashboards/15987-kyverno.yaml
+  - dashboards/16888-longhorn.yaml

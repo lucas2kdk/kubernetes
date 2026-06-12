@@ -23,6 +23,14 @@ spec:
   values:
     crds:
       enabled: true
+    # Emit a ServiceMonitor for the controller's :9402 metrics so the
+    # cert-manager dashboard (gnetId 11001) has data. cert-manager is excluded
+    # from the cluster default-deny, so the scrape is allowed. Prometheus
+    # discovers it via serviceMonitorSelectorNilUsesHelmValues:false.
+    prometheus:
+      enabled: true
+      servicemonitor:
+        enabled: true
     # Let's Encrypt ClusterIssuers (Cloudflare DNS-01) live in the separate
     # cert-manager-issuers component: they need both cert-manager CRDs and the
     # ESO-synced Cloudflare token, so they reconcile behind

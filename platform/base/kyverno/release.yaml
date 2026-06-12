@@ -23,6 +23,22 @@ spec:
     remediation:
       retries: 3
   values:
+    # Emit a ServiceMonitor per controller (:8000 metrics) so the Kyverno
+    # dashboard (gnetId 15987) has data. kyverno ns is excluded from the cluster
+    # default-deny; Prometheus discovers these via
+    # serviceMonitorSelectorNilUsesHelmValues:false.
+    admissionController:
+      serviceMonitor:
+        enabled: true
+    backgroundController:
+      serviceMonitor:
+        enabled: true
+    cleanupController:
+      serviceMonitor:
+        enabled: true
+    reportsController:
+      serviceMonitor:
+        enabled: true
     features:
       # Fail-closed webhooks assume the admission controller outlives any one
       # node — impossible on a single-node cluster, where every drain evicts

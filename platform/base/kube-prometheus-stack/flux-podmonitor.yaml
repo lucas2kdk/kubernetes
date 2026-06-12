@@ -1,0 +1,34 @@
+# Scrape the Flux controllers so the Flux2 dashboard (gnetId 16714) has data.
+# Mirrors fluxcd/flux2-monitoring-example: the controllers expose Prometheus
+# metrics on the http-prom port (8080). flux-system is excluded from the
+# cluster default-deny, so the scrape is allowed. Prometheus discovers this via
+# podMonitorSelectorNilUsesHelmValues:false (set in release.yaml).
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: flux-system
+  namespace: flux-system
+  labels:
+    app.kubernetes.io/part-of: flux
+    app.kubernetes.io/component: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - flux-system
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - helm-controller
+          - source-controller
+          - kustomize-controller
+          - notification-controller
+          - image-automation-controller
+          - image-reflector-controller
+  podMetricsEndpoints:
+    - port: http-prom
+      relabelings:
+        - action: replace
+          sourceLabels: [__meta_kubernetes_pod_node_name]
+          targetLabel: node

@@ -43,11 +43,17 @@ infrastructure, **Flux owns everything inside Kubernetes**, organized as
     `external-secrets` (ESO → Vault), `cert-manager` +
     `cert-manager-issuers` (Let's Encrypt via Cloudflare DNS-01), `traefik`
     (ingress, ClusterIP-only for now), and `tailscale-operator` (API-server
-    proxy in auth mode — see [Tailscale access](#tailscale-access-api-server-proxy)).
+    proxy in auth mode — see [Tailscale access](#tailscale-access-api-server-proxy)),
+    and `kube-prometheus-stack` (Prometheus + Grafana). Grafana is reached on
+    the tailnet at `https://grafana.<tailnet>.ts.net` (Tailscale ingress, tsidp
+    OIDC — same model as Headlamp); Prometheus keeps a self-pruning ≤100Gi
+    Longhorn TSDB (`retentionSize` 85GiB / 30d). Bundled dashboards (Kubernetes,
+    Flux, cert-manager, Kyverno, Longhorn) provision from the committed
+    ConfigMaps under `kube-prometheus-stack/dashboards/` via the Grafana
+    sidecar, fed by per-component ServiceMonitor/PodMonitors.
   - **Scaffolded stubs (V1, wired but minimal — see `# TODO` markers):**
-    `kube-prometheus-stack`, `netdata`, `vector`. These reconcile to
-    minimal installs; cluster-specific config (remote-write, Humio sink) is
-    left to fill in.
+    `netdata`, `vector`. These reconcile to minimal installs; cluster-specific
+    config (Humio sink) is left to fill in.
 
   The `network` default-deny policy denies all ingress/egress for **workload**
   namespaces while excluding the platform namespaces (`kube-system`,
@@ -93,6 +99,11 @@ kubectl -n policy-reporter port-forward svc/policy-reporter-ui 8082:8080
 > managed out-of-band via Terraform, not by this repository.
 
 ## Tailscale access (API-server proxy)
+
+> For the full access-layer overview — CLI **and** Headlamp UI paths, tags,
+> OAuth clients, and the ACL source of truth — see
+> [`bootstrap/terraform/docs/tailscale.md`](../bootstrap/terraform/docs/tailscale.md).
+> This section covers the CLI / API-proxy path only.
 
 Cluster access runs through the Tailscale operator's API-server proxy in
 **auth mode**: the proxy authenticates your tailnet identity and impersonates

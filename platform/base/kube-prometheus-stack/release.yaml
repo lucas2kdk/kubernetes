@@ -23,8 +23,80 @@ spec:
     remediation:
       retries: 3
   values:
-    # Grafana is external — clusters ship metrics out, no in-cluster Grafana.
     grafana:
-      enabled: false
-    # TODO: prometheus.prometheusSpec.remoteWrite -> external Grafana/Mimir.
+      enabled: true
+      # SQLite state only — datasources and all dashboards are provisioned
+      # (chart datasource + the sidecar below), so this stays tiny.
+      persistence:
+        enabled: true
+        type: pvc
+        storageClassName: longhorn
+        accessModes: ["ReadWriteOnce"]
+        size: 2Gi
+      # Reached only over the tailnet via the Tailscale ingress (ingress.yaml);
+      # login is tsidp OIDC, the same issuer + group model as Headlamp. The
+      # native login form is disabled so the tailnet identity is the only door.
+      grafana.ini:
+        server:
+          root_url: https://grafana.penguin-bigeye.ts.net
+        auth:
+          disable_login_form: true
+          oauth_auto_login: true
+        auth.generic_oauth:
+          enabled: true
+          name: tsidp
+          # client_id/secret come from the grafana-oidc Secret via the env vars
+          # in `extraSecretMounts`-free `envValueFrom` below.
+          auth_url: https://idp.penguin-bigeye.ts.net/authorize
+          token_url: https://idp.penguin-bigeye.ts.net/token
+          api_url: https://idp.penguin-bigeye.ts.net/userinfo
+          scopes: openid email profile groups
+          # tsidp injects the group via a cap grant (group:k8s-admins ->
+          # {"groups":["k8s-admins"]}); the apiserver-style oidc: prefix is NOT
+          # added by tsidp's userinfo, so match the bare claim here.
+          role_attribute_path: "contains(groups[*], 'k8s-admins') && 'Admin' || 'Viewer'"
+          role_attribute_strict: false
+      # Client credentials from the grafana-oidc Secret (external-secret.yaml).
+      envValueFrom:
+        GF_AUTH_GENERIC_OAUTH_CLIENT_ID:
+          secretKeyRef:
+            name: grafana-oidc
+            key: client_id
+        GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET:
+          secretKeyRef:
+            name: grafana-oidc
+            key: client_secret
+      # Sidecar loads any ConfigMap labelled grafana_dashboard=1 from this
+      # namespace (the committed dashboards/ ConfigMaps), foldered by the
+      # grafana_folder annotation.
+      sidecar:
+        dashboards:
+          enabled: true
+          label: grafana_dashboard
+          labelValue: "1"
+          searchNamespace: monitoring
+          folderAnnotation: grafana_folder
+          provider:
+            foldersFromFilesStructure: true
+    prometheus:
+      prometheusSpec:
+        # Bounded, self-pruning TSDB. retentionSize trims oldest blocks once the
+        # data dir exceeds 85GiB — kept under the 100Gi PVC so WAL/compaction has
+        # headroom. 30d is the time ceiling, whichever hits first wins.
+        retention: 30d
+        retentionSize: "85GiB"
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: longhorn
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 100Gi
+        # Discover ServiceMonitors/PodMonitors/Rules across all namespaces (the
+        # cert-manager/kyverno/flux/longhorn scrapers), not just chart-labelled.
+        serviceMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelectorNilUsesHelmValues: false
+        probeSelectorNilUsesHelmValues: false
+        ruleSelectorNilUsesHelmValues: false
     # TODO: Alertmanager routing/receivers (PagerDuty/Slack), alert rules from repo.

@@ -1,0 +1,21 @@
+# Expose Grafana on the tailnet only — same model as Headlamp: no Traefik
+# route, no cert-manager cert, no public DNS, zero public attack surface. The
+# Tailscale operator provisions a proxy device named "grafana" (tag:k8s) serving
+# HTTPS with a tailnet cert: https://grafana.<tailnet>.ts.net
+# Requires MagicDNS + HTTPS certificates on the tailnet, and an ACL that lets
+# your device reach tag:k8s:443.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service:
+      name: kube-prometheus-stack-grafana
+      port:
+        number: 80
+  tls:
+    - hosts:
+        - grafana

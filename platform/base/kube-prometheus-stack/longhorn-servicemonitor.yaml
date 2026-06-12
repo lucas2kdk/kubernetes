@@ -1,0 +1,27 @@
+# Scrape longhorn-manager so the Longhorn dashboard (gnetId 16888) has data.
+# Longhorn is installed out-of-band by Terraform (cluster-addons), but the
+# ServiceMonitor is a plain CR and lives with the rest of the monitoring config.
+# longhorn-manager exposes metrics on the "manager" port (9500) at /metrics via
+# the longhorn-backend Service. Prometheus discovers this through
+# serviceMonitorSelectorNilUsesHelmValues:false (set in release.yaml).
+#
+# NOTE: longhorn-system is now in the default-deny exclusion list
+# (platform/base/network/default-deny.yaml) so this scrape isn't blocked.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+  labels:
+    app.kubernetes.io/part-of: longhorn
+    app.kubernetes.io/component: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - longhorn-system
+  selector:
+    matchLabels:
+      app: longhorn-manager
+  endpoints:
+    - port: manager
+      path: /metrics
