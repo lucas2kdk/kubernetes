@@ -30,6 +30,11 @@ spec:
           - vector
           - headlamp
           - tsidp
+          # longhorn-system is excluded from default-deny and manages its own
+          # connectivity; adding it here prevents allow-ingress-from-traefik from
+          # being the only policy applied and implicitly blocking intra-namespace
+          # traffic (e.g. longhorn-manager → instance-manager gRPC on :8500).
+          - longhorn-system
   ingress:
     - fromEndpoints:
         - matchLabels:
