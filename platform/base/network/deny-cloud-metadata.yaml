@@ -34,6 +34,12 @@ spec:
           - vector
           - headlamp
           - tsidp
+          # longhorn-system must stay in lockstep with default-deny and
+          # allow-ingress-from-traefik: selecting it here with an egressDeny
+          # rule enables Cilium egress policy enforcement on its pods, which
+          # blocks egress to the kube-apiserver entity (not covered by any
+          # allow rule when longhorn-system is outside all other CCNPs).
+          - longhorn-system
   egressDeny:
     - toCIDR:
         - 169.254.169.254/32
