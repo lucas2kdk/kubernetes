@@ -11,16 +11,22 @@
   "prHourlyLimit": 4,
   "prConcurrentLimit": 10,
   "flux": {
-    "fileMatch": ["(^|/).+\\.ya?ml$"]
+    "managerFilePatterns": [
+      "/(^|/).+\\.ya?ml$/"
+    ]
   },
   "helm-values": {
-    "fileMatch": ["(^|/).+\\.ya?ml$"]
+    "managerFilePatterns": [
+      "/(^|/).+\\.ya?ml$/"
+    ]
   },
   "customManagers": [
     {
       "customType": "regex",
       "description": "Headlamp plugins fetched at runtime by the chart pluginsManager (configContent). Tracked against the headlamp-k8s/plugins repo, where each plugin is tagged '<name>-<version>' (e.g. flux-0.6.0).",
-      "fileMatch": ["^platform/base/headlamp/release\\.yaml$"],
+      "managerFilePatterns": [
+        "/^platform/base/headlamp/release\\.yaml$/"
+      ],
       "matchStrings": [
         "- name: (?<depName>\\S+)\\s+source: \\S+headlamp-plugins\\S*\\s+version: (?<currentValue>\\S+)"
       ],
