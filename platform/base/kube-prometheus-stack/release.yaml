@@ -50,7 +50,12 @@ spec:
           auth_url: https://idp.penguin-bigeye.ts.net/authorize
           token_url: https://idp.penguin-bigeye.ts.net/token
           api_url: https://idp.penguin-bigeye.ts.net/userinfo
-          scopes: openid email profile groups
+          # tsidp has no "groups" scope — requesting it makes tsidp reject the
+          # whole authorize request with error=invalid_scope, which Grafana
+          # surfaces as "Login provider denied login request". The groups claim
+          # is injected via the cap grant (below) regardless of requested scope,
+          # so we just don't ask for it as a scope.
+          scopes: openid email profile
           # tsidp injects the group via a cap grant (group:k8s-admins ->
           # {"groups":["k8s-admins"]}); the apiserver-style oidc: prefix is NOT
           # added by tsidp's userinfo, so match the bare claim here.
