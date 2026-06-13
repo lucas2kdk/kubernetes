@@ -15,3 +15,8 @@ spec:
   path: ./platform/base/headlamp
   prune: true
   wait: true
+  postBuild:
+    substituteFrom:
+      # ${tailnet} -> the OIDC issuer hostname (idp.<tailnet>.ts.net).
+      - kind: ConfigMap
+        name: fleet-vars

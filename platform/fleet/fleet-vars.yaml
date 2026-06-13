@@ -1,0 +1,15 @@
+# Fleet-wide substitution values — the same on every cluster (unlike cluster-vars,
+# which differs per cluster). Consumed by fleet Flux Kustomizations via
+# postBuild.substituteFrom (ConfigMap/fleet-vars). Today: the tailnet name behind
+# the tsidp OIDC issuer + Grafana/Headlamp URLs (idp/grafana.<tailnet>.ts.net).
+#
+# NOT part of platform/fleet/kustomization.yaml (which aggregates the component
+# Flux Kustomizations); each cluster that runs a component reading ${tailnet}
+# references this file directly from its own kustomization.yaml.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fleet-vars
+  namespace: flux-system
+data:
+  tailnet: penguin-bigeye

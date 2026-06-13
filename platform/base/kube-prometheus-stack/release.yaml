@@ -38,7 +38,7 @@ spec:
       # native login form is disabled so the tailnet identity is the only door.
       grafana.ini:
         server:
-          root_url: https://grafana.penguin-bigeye.ts.net
+          root_url: https://grafana.${tailnet}.ts.net
         auth:
           disable_login_form: true
           oauth_auto_login: true
@@ -47,9 +47,9 @@ spec:
           name: tsidp
           # client_id/secret come from the grafana-oidc Secret via the env vars
           # in `extraSecretMounts`-free `envValueFrom` below.
-          auth_url: https://idp.penguin-bigeye.ts.net/authorize
-          token_url: https://idp.penguin-bigeye.ts.net/token
-          api_url: https://idp.penguin-bigeye.ts.net/userinfo
+          auth_url: https://idp.${tailnet}.ts.net/authorize
+          token_url: https://idp.${tailnet}.ts.net/token
+          api_url: https://idp.${tailnet}.ts.net/userinfo
           # tsidp has no "groups" scope — requesting it makes tsidp reject the
           # whole authorize request with error=invalid_scope, which Grafana
           # surfaces as "Login provider denied login request". The groups claim

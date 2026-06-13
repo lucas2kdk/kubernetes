@@ -13,3 +13,8 @@ spec:
   path: ./platform/base/kube-prometheus-stack
   prune: true
   wait: true
+  postBuild:
+    substituteFrom:
+      # ${tailnet} -> Grafana root_url + OIDC URLs ({grafana,idp}.<tailnet>.ts.net).
+      - kind: ConfigMap
+        name: fleet-vars

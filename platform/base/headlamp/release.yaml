@@ -26,7 +26,7 @@ spec:
         # Client credentials come from the headlamp-oidc Secret via valuesFrom
         # below. Issuer is tsidp; the kube-apiserver trusts it through the
         # oidc-* flags set in the Talos machine config (bootstrap repo).
-        issuerURL: https://idp.penguin-bigeye.ts.net
+        issuerURL: https://idp.${tailnet}.ts.net
         scopes: "openid,email,profile"
       # The plugin manager runs as a SIDECAR (not an init container) and takes
       # ~12s to download plugins, while the backend scans pluginsDir once at
