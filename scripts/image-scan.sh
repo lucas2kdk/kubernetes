@@ -2,21 +2,28 @@
 # Weekly container-image CVE scan. NOT a PR gate — CVEs are disclosed
 # independently of commits, so this runs on a schedule, not on pull requests.
 #
+# Scope: only the components the cluster actually reconciles (the clusters/<name>
+# Flux Kustomization `path:` targets), NOT every platform/base. Scanning images
+# for scaffolded-but-undeployed components (netdata, vector) would alert on CVEs
+# that don't run anywhere — noise. This mirrors how policy-check.sh scopes.
+#
 # Image discovery has two sources, because most images live inside the Helm
 # charts rather than in the repo:
-#   1. helm template each HelmRelease (chart + version + inline values, repo URL
-#      from the sibling HelmRepository) and scrape the rendered `image:` fields.
-#   2. kustomize build the plain manifests (catches images pinned directly in
-#      the repo, e.g. the tsidp Deployment, and anything set in HelmRelease values).
+#   1. helm template each reconciled HelmRelease (chart + version + inline values,
+#      repo URL from the sibling HelmRepository) and scrape rendered `image:` refs.
+#   2. the rendered reconciled bundle itself — catches images pinned directly in
+#      the repo (e.g. the tsidp Deployment) and anything set in HelmRelease values.
 # Charts that fail to template are reported, not skipped silently, so coverage
 # gaps are visible.
 #
-# Each unique image is scanned with Trivy (HIGH + CRITICAL). The script exits 1
-# if any CRITICAL is found, so a scheduled run goes red and notifies.
+# Each unique image is scanned with Trivy (HIGH + CRITICAL, --ignore-unfixed so
+# the gate only fails on CVEs a version bump can actually resolve). The script
+# exits 1 if any CRITICAL is found, so a scheduled run goes red and notifies.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
+cluster="${1:-prod-fsn}"
 
 if command -v kustomize >/dev/null 2>&1; then
   build() { kustomize build "$1" --load-restrictor LoadRestrictionsNone; }
@@ -34,11 +41,28 @@ scrape_images() { grep -oE 'image:[[:space:]]*"?[a-zA-Z0-9][a-zA-Z0-9./_-]+(:[a-
 
 failed_charts=()
 
+# Render everything clusters/<cluster> reconciles into one bundle: the HelmRelease
+# + HelmRepository objects and any plain manifests (e.g. the tsidp Deployment).
+# Overlay-based components (tailscale-operator) resolve correctly because the
+# overlay path pulls in its base.
+echo "== rendering reconciled manifests (clusters/$cluster) ==" >&2
+while read -r dir; do
+  [ -f "$dir/kustomization.yaml" ] || continue
+  { echo "---"; build "$dir"; } >> "$tmp/bundle.yaml" 2>/dev/null
+done < <(grep -rhE '^\s*path:' "clusters/$cluster"/*.yaml \
+           | grep -v '^\s*#' \
+           | sed -E 's#.*path:\s*\./##' | sort -u)
+
+# HelmReleases the cluster actually reconciles — used to skip undeployed bases.
+deployed_releases="$(yq -r 'select(.kind == "HelmRelease") | .metadata.name' "$tmp/bundle.yaml" 2>/dev/null | sort -u)"
+
 echo "== rendering HelmReleases ==" >&2
 while read -r rel; do
+  name="$(yq -r '.metadata.name' "$rel")"
+  # Only template charts this cluster reconciles (skips scaffolded netdata/vector).
+  grep -qxF "$name" <<<"$deployed_releases" || { echo "→ skip (not reconciled): $name" >&2; continue; }
   dir="$(dirname "$rel")"
   src="$dir/source.yaml"
-  name="$(yq -r '.metadata.name' "$rel")"
   ns="$(yq -r '.metadata.namespace' "$rel")"
   chart="$(yq -r '.spec.chart.spec.chart' "$rel")"
   version="$(yq -r '.spec.chart.spec.version' "$rel")"
@@ -55,12 +79,11 @@ while read -r rel; do
   fi
 done < <(find platform/base -name release.yaml | sort) > "$tmp/rendered.yaml"
 
-echo "== rendering plain manifests ==" >&2
-while read -r d; do
-  [ -f "$d/kustomization.yaml" ] && build "$d" 2>/dev/null
-done < <(find platform tenants -name kustomization.yaml -printf '%h\n' | sort -u) >> "$tmp/rendered.yaml"
-
-scrape_images < "$tmp/rendered.yaml" | sort -u > "$tmp/images.txt"
+# Scrape images from the helm output AND the reconciled bundle (plain manifests
+# like the tsidp Deployment, plus any images pinned in HelmRelease values).
+scrape_images < "$tmp/rendered.yaml" > "$tmp/images.txt"
+scrape_images < "$tmp/bundle.yaml" >> "$tmp/images.txt"
+sort -u -o "$tmp/images.txt" "$tmp/images.txt"
 echo "== discovered $(wc -l < "$tmp/images.txt") unique images ==" >&2
 
 # Scan each image; tally HIGH/CRITICAL from Trivy JSON.
@@ -69,7 +92,7 @@ printf '\n## Weekly image CVE scan\n\n'
 printf '| image | HIGH | CRITICAL |\n|---|---:|---:|\n'
 while read -r img; do
   [ -z "$img" ] && continue
-  trivy image --quiet --scanners vuln --severity HIGH,CRITICAL \
+  trivy image --quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
     --format json "$img" > "$tmp/scan.json" 2>/dev/null || { printf '| `%s` | ? | ? (scan error) |\n' "$img"; continue; }
   read -r high crit < <(python3 - "$tmp/scan.json" <<'PY'
 import json,sys

@@ -241,10 +241,12 @@ the [`justfile`](justfile) (`just <recipe>`):
 
 `just check` runs all three (what CI runs). `just` with no recipe lists them.
 
-A fourth recipe, `just scan`, renders every chart + manifest and scans the
-referenced container images for CVEs with Trivy. It is **not** a PR gate —
-CVEs are disclosed independently of commits — so it runs weekly instead
-(`.github/workflows/image-scan.yaml`, Mondays 06:00 UTC) and on demand.
+A fifth recipe, `just scan`, renders the charts + manifests the cluster actually
+reconciles (not scaffolded stubs) and scans the referenced container images for
+CVEs with Trivy (`--ignore-unfixed`, so it flags only criticals a version bump
+can resolve). It is **not** a PR gate — CVEs are disclosed independently of
+commits — so it runs weekly instead (`.github/workflows/image-scan.yaml`,
+Mondays 06:00 UTC) and on demand.
 
 ### Policy unit tests (`tests/policy/`)
 
