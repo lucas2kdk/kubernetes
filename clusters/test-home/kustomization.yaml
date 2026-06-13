@@ -7,3 +7,9 @@ resources:
   - ../../platform/fleet/external-secrets.yaml
   - ../../platform/fleet/tailscale-operator.yaml
   - external-secrets-stores.yaml
+patches:
+  - path: ../../platform/fleet/_defaults.yaml
+    target:
+      group: kustomize.toolkit.fluxcd.io
+      version: v1
+      kind: Kustomization
