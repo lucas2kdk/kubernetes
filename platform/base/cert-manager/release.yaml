@@ -34,6 +34,6 @@ spec:
     # Let's Encrypt ClusterIssuers (Cloudflare DNS-01) live in the separate
     # cert-manager-issuers component: they need both cert-manager CRDs and the
     # ESO-synced Cloudflare token, so they reconcile behind
-    # dependsOn [cert-manager, external-secrets] instead of coupling this release
+    # dependsOn [cert-manager, external-secrets-stores] instead of coupling this release
     # to ESO. If DNS-01 self-checks ever stall behind cluster DNS, set
     # dns01RecursiveNameservers: "1.1.1.1:53,8.8.8.8:53" (+ ...Only: true) here.

@@ -1,5 +1,5 @@
 # Plain CRs only (no namespace/source) — reconciled as its own Flux Kustomization
-# behind dependsOn [cert-manager, external-secrets], like the kyverno/policies split.
+# behind dependsOn [cert-manager, external-secrets-stores], like the kyverno/policies split.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
