@@ -1,3 +1,5 @@
+# Jetstack chart repo for the cert-manager HelmRelease. Centralized in
+# flux-system with the other platform sources (tenants can't ref it cross-namespace).
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:

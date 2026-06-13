@@ -36,6 +36,9 @@ trap 'rm -rf "$tmp"' EXIT
 
 # Pull every "image:" scalar out of a manifest stream, keeping only plausible
 # refs (a registry path; never bare booleans, blank values or pullPolicy).
+# The trailing `grep -E '[./]'` is the key filter: a real ref always has a registry
+# host or repo path separator, so it drops noise like `image: true`. `|| true`
+# keeps the pipeline from failing the script when a stream has no images.
 scrape_images() { grep -oE 'image:[[:space:]]*"?[a-zA-Z0-9][a-zA-Z0-9./_-]+(:[a-zA-Z0-9._-]+)?(@sha256:[a-f0-9]+)?"?' \
                    | sed -E 's/^image:[[:space:]]*"?//; s/"$//' | grep -E '[./]' || true; }
 
@@ -49,6 +52,9 @@ echo "== rendering reconciled manifests (clusters/$cluster) ==" >&2
 while read -r dir; do
   [ -f "$dir/kustomization.yaml" ] || continue
   { echo "---"; build "$dir"; } >> "$tmp/bundle.yaml" 2>/dev/null
+# Read the reconciled paths straight from the cluster's CR `path:` fields:
+# -h drops filenames, the second grep skips commented-out paths, sed strips the
+# leading `./` so the value is a repo-relative dir to build.
 done < <(grep -rhE '^\s*path:' "clusters/$cluster"/*.yaml \
            | grep -v '^\s*#' \
            | sed -E 's#.*path:\s*\./##' | sort -u)
@@ -92,6 +98,12 @@ printf '\n## Weekly image CVE scan\n\n'
 printf '| image | HIGH | CRITICAL |\n|---|---:|---:|\n'
 while read -r img; do
   [ -z "$img" ] && continue
+  # --scanners vuln: only CVEs (skip secret/license/config scanning).
+  # --ignore-unfixed: drop CVEs with no fixed version available — they're not
+  #   actionable here (the gate is "bump to a fixed image"), so reporting them is
+  #   noise that would keep the weekly run permanently red.
+  # A scan error (e.g. unreachable registry) is reported as `?` rather than
+  # silently dropping the image from coverage.
   trivy image --quiet --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed \
     --format json "$img" > "$tmp/scan.json" 2>/dev/null || { printf '| `%s` | ? | ? (scan error) |\n' "$img"; continue; }
   read -r high crit < <(python3 - "$tmp/scan.json" <<'PY'

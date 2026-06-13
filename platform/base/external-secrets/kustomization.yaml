@@ -1,3 +1,8 @@
+# External Secrets Operator (ESO) base — the controller that reconciles
+# ExternalSecret CRs against Vault. The ClusterSecretStore itself lives in the
+# sibling external-secrets-stores component (split so it applies only after this
+# HelmRelease has installed its CRDs); every secret consumer (cert-manager,
+# tailscale, tsidp, headlamp) reads through that store.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

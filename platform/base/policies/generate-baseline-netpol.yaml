@@ -1,3 +1,24 @@
+# ============================================================================
+# NAMESPACE EXCLUSION LIST — ONE OF FOUR THAT MUST STAY SET-IDENTICAL.
+# The exclude `names:` list below is the Kyverno member of the four-place
+# platform-namespace lockstep:
+#   1. platform/base/network/default-deny.yaml            (Cilium NotIn values)
+#   2. platform/base/network/deny-cloud-metadata.yaml     (Cilium NotIn values)
+#   3. platform/base/network/allow-ingress-from-traefik.yaml (Cilium NotIn values)
+#   4. THIS FILE                                          (Kyverno exclude names)
+# scripts/check-namespace-lists.sh (`just namespaces`, part of `just check` and
+# the PR gate) FAILS the build if these four diverge. Adding a platform namespace
+# means editing all four by hand — labelling the namespace is NOT enough here,
+# because this rule matches on Namespace kind, not via the platform.io/managed
+# namespaceSelector the pod policies use.
+#
+# longhorn-system special case: it is Terraform-managed storage with NO baseline
+# CNP on purpose. On 2026-06-12 the lists fell out of lockstep and a baseline CNP
+# got injected here, flipping longhorn-system into default-deny and cutting the
+# CSI sidecars off from the kube-apiserver (provisioner crash-loop, PVCs stuck
+# Pending — a cluster-wide storage outage). It must remain excluded in all four
+# lists. This drift is exactly what the guard now prevents.
+# ============================================================================
 apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
@@ -12,6 +33,8 @@ metadata:
       app needs. synchronize keeps the generated policy in sync and recreates
       it if deleted.
 spec:
+  # generateExisting: true also generates the baseline CNP for namespaces that
+  # already exist when the policy is installed, not just newly-created ones.
   generateExisting: true
   rules:
     - name: baseline-cnp

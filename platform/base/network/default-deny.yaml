@@ -1,3 +1,19 @@
+# ============================================================================
+# NAMESPACE EXCLUSION LIST — ONE OF FOUR THAT MUST STAY SET-IDENTICAL.
+# The NotIn `values:` list below is one of the four platform-namespace exclusion
+# lists kept in lockstep (the other three: deny-cloud-metadata.yaml,
+# allow-ingress-from-traefik.yaml, and policies/generate-baseline-netpol.yaml).
+# scripts/check-namespace-lists.sh (`just namespaces`, part of the PR gate) FAILS
+# the build if they diverge. Adding a platform namespace = edit all four by hand;
+# Cilium can't match arbitrary namespace labels in a NotIn, so this stays a
+# literal string list rather than a platform.io/managed selector.
+#
+# longhorn-system (Terraform-managed storage) is the special case: it MUST stay
+# excluded in all four. On 2026-06-12 the lists drifted and a baseline CNP got
+# generated into longhorn-system, flipping it into default-deny and cutting the
+# CSI sidecars off from the kube-apiserver — provisioner crash-loop, PVCs stuck
+# Pending, cluster-wide storage outage. The drift guard now prevents that class.
+# ============================================================================
 apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
 metadata:

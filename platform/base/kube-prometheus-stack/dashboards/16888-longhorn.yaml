@@ -1,3 +1,8 @@
+# Longhorn dashboard (grafana.com gnetId 16888), imported JSON. The
+# grafana_dashboard="1" label is what the Grafana sidecar watches to auto-load
+# it; grafana_folder files it under "Storage". Reads the default Prometheus
+# datasource, fed by the longhorn ServiceMonitor (longhorn-servicemonitor.yaml,
+# reconciled via monitoring-extras).
 apiVersion: v1
 kind: ConfigMap
 metadata:

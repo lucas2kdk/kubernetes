@@ -7,13 +7,16 @@ name: Image CVE scan
 # Results land in the run summary; a CRITICAL fails the run so GitHub notifies.
 on:
   schedule:
-    # Mondays 06:00 UTC — after the Renovate window so bumped charts get scanned.
+    # cron "0 6 * * 1" = minute 0, hour 6, any day-of-month, any month, weekday 1
+    # (Monday) → Mondays 06:00 UTC. After the Renovate window so bumped charts get scanned.
     - cron: "0 6 * * 1"
-  workflow_dispatch:
+  workflow_dispatch:        # also allow on-demand runs from the Actions tab
 
+# Read-only: this scan reads the tree and pulls public images, nothing more.
 permissions:
   contents: read
 
+# Pinned, Renovate-tracked tool versions (see the annotations); passed to setup-tools.
 env:
   # renovate: datasource=github-releases depName=kubernetes-sigs/kustomize extractVersion=^kustomize/v(?<version>.+)$
   KUSTOMIZE_VERSION: "5.8.1"
@@ -21,6 +24,9 @@ env:
   TRIVY_VERSION: "0.71.0"
 
 jobs:
+  # Single job: discover the reconciled images and Trivy-scan them. `just scan`
+  # exits non-zero on a CRITICAL, which fails the run and triggers GitHub's
+  # scheduled-workflow-failure notification.
   scan:
     runs-on: ubuntu-latest
     steps:

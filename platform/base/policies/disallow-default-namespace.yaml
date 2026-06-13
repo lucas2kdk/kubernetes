@@ -10,6 +10,8 @@ metadata:
       'default' namespace. Keeps the tenant model clean and complements
       flux-multi-tenancy.
 spec:
+  # background: true also evaluates pods that already exist, surfacing pre-existing
+  # violations in PolicyReports (not just at admission).
   background: true
   rules:
     - name: disallow-default-namespace
@@ -19,6 +21,9 @@ spec:
               kinds:
                 - Pod
       validate:
+        # Audit, not Enforce: reports the violation but does not block admission.
+        # No namespace exclusions needed — the rule only ever targets `default`,
+        # which is neither a platform nor a tenant namespace.
         failureAction: Audit
         message: "Workloads must run in a dedicated namespace, not 'default'."
         deny:

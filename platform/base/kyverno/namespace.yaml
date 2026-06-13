@@ -1,3 +1,8 @@
+# Namespace for the Kyverno admission controller.
+# The platform.io/managed label is what exempts this namespace from the
+# tenant-facing Kyverno pod policies (which exclude via namespaceSelector on this
+# label). It does NOT exempt kyverno from the Cilium default-deny — that needs an
+# explicit entry in the four network NotIn lists (see network/default-deny.yaml).
 apiVersion: v1
 kind: Namespace
 metadata:

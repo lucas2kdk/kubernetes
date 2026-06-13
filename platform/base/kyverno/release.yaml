@@ -1,3 +1,8 @@
+# Kyverno admission-controller HelmRelease. Installs/owns the Kyverno CRDs and the
+# four controllers (admission, background, cleanup, reports); the ClusterPolicies
+# in platform/base/policies are applied separately by kyverno-policies. Tuning
+# below is hard-won — see the dated incident notes inline before changing limits
+# or failure-policy settings.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

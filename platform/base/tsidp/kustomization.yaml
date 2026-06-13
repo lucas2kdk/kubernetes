@@ -1,3 +1,8 @@
+# tsidp base — the Tailscale OIDC identity provider that issues the id_tokens
+# behind Headlamp and Grafana logins. A plain Deployment (no Helm chart) that
+# joins the tailnet and exposes its OIDC discovery/JWKS endpoints via Funnel so
+# the kube-apiserver can fetch them. dependsOn external-secrets-stores in the
+# fleet graph (its auth key, external-secret.yaml, comes from Vault).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

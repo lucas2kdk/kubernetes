@@ -11,11 +11,13 @@
   "prHourlyLimit": 4,
   "prConcurrentLimit": 10,
   "flux": {
+    "description": "Let the Flux manager scan every YAML file (HelmRelease chart versions, GitRepository/OCIRepository refs) anywhere in the tree, not just a default path.",
     "managerFilePatterns": [
       "/(^|/).+\\.ya?ml$/"
     ]
   },
   "helm-values": {
+    "description": "Let the helm-values manager scan every YAML file for image tags pinned inside HelmRelease .spec.values, which the flux manager alone would miss.",
     "managerFilePatterns": [
       "/(^|/).+\\.ya?ml$/"
     ]

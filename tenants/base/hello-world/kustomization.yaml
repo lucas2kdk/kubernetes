@@ -1,3 +1,5 @@
+# hello-world tenant base: namespace + SA/RBAC + Flux source + HelmRelease.
+# namespace forces every resource into hello-world (matches namespace.yaml).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: hello-world

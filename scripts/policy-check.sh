@@ -48,6 +48,10 @@ while read -r dir; do
   { echo "---"; build "$dir"; } >> "$tmp/resources.yaml"
 done < <(python3 - "$tmp/cluster-objs.yaml" <<'PY'
 import sys, yaml
+# Walk the built cluster bundle and emit the spec.path of each Flux Kustomization
+# CR (deduped). Filters: only Flux kustomize.toolkit kind: Kustomization (skip the
+# kustomize build-config kind of the same name), and skip flux-system (its path is
+# the cluster dir itself — rendering it would re-emit these very CRs).
 seen = set()
 for d in yaml.safe_load_all(open(sys.argv[1])):
     if not isinstance(d, dict):
@@ -104,12 +108,18 @@ kyverno test tests/policy
 echo
 echo "== guarding generate-baseline-netpol longhorn-system exclusion =="
 gen="$tmp/generated.yaml"
+# -o writes the resources the policy WOULD generate; `|| true` because a generate
+# policy run can exit non-zero while still producing useful output — we assert on
+# the output, not the exit code.
 kyverno apply platform/base/policies/generate-baseline-netpol.yaml \
   --resource tests/policy/netpol-namespaces.yaml -o "$gen" >/dev/null 2>&1 || true
+# Positive assertion: the tenant namespace MUST get a baseline CNP.
 if ! grep -qE '^[[:space:]]*namespace:[[:space:]]*tenant-netpol$' "$gen"; then
   echo "✗ FAIL: no baseline CiliumNetworkPolicy generated for the tenant namespace"
   exit 1
 fi
+# Negative assertion: longhorn-system MUST NOT — a generated CNP here flips it into
+# default-deny and severs CSI ↔ kube-apiserver (the 2026-06-12 outage).
 if grep -q 'longhorn-system' "$gen"; then
   echo "✗ FAIL: baseline CiliumNetworkPolicy leaked into longhorn-system (CSI outage risk)"
   exit 1

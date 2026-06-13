@@ -1,3 +1,4 @@
+# Kyverno admission controller (policy engine). Roots its policies/reporter.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -6,4 +7,5 @@ metadata:
 spec:
   path: ./platform/base/kyverno
   dependsOn:
+    # Ships ServiceMonitors, which need the Prometheus-Operator CRDs to exist first.
     - name: kube-prometheus-stack

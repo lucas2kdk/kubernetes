@@ -10,6 +10,10 @@ spec:
     though monitoring itself is excluded from default-deny (it's a platform
     namespace). Mirrors the endpoint selector and namespace exclusion list of
     allow-ingress-from-traefik so both policies apply to the same set of pods.
+  # NOTE: this NotIn list mirrors the four guarded exclusion lists but is NOT
+  # itself checked by scripts/check-namespace-lists.sh. Keep it in sync by hand
+  # when you add a platform namespace, or monitoring will lose scrape access to
+  # the new namespace's workloads.
   endpointSelector:
     matchExpressions:
       - key: k8s:io.kubernetes.pod.namespace

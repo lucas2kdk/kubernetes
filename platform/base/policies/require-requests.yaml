@@ -34,6 +34,8 @@ spec:
                 matchLabels:
                   platform.io/managed: "true"
       validate:
+        # Audit only (Tier-1 baseline); promote to Enforce per-environment once
+        # policy-reporter shows clean.
         failureAction: Audit
         message: "CPU and memory resource requests are required on every container."
         pattern:

@@ -26,9 +26,15 @@ inputs:
     description: actionlint version, e.g. 1.7.12
     default: ""
 
+# Shared by pull-request.yaml and image-scan.yaml. Each step installs one tool
+# only if its input was passed (if: inputs.X != ''), so a caller pulls just the
+# tools that job needs; each downloads the pinned release tarball and extracts the
+# single binary onto PATH (/usr/local/bin). Composite (not a separate workflow) so
+# it's a drop-in step with no extra runner/checkout.
 runs:
   using: composite
   steps:
+    # kustomize uses a kustomize/vX.Y.Z tag scheme, hence the %2F-encoded path.
     - name: Install kustomize
       if: inputs.kustomize != ''
       shell: bash

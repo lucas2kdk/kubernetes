@@ -1,3 +1,7 @@
+# HelmRepository for the Kyverno chart. Lives in flux-system (the shared source
+# namespace) — the HelmRelease's chart.spec.sourceRef points here cross-namespace,
+# which is allowed because platform components are exempt from the
+# flux-multi-tenancy same-namespace sourceRef rule.
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
