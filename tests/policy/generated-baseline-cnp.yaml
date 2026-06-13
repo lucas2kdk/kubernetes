@@ -1,0 +1,30 @@
+# Expected CiliumNetworkPolicy that generate-baseline-netpol must synthesise for
+# a tenant namespace (kyverno-test.yaml asserts this via generatedResource).
+# Kyverno's own generate.kyverno.io/* and managed-by labels are volatile and
+# omitted — kyverno test ignores them in the comparison. The point of asserting
+# the full spec is to catch a regression in the baseline connectivity itself:
+# same-namespace ingress/egress + DNS to CoreDNS.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: baseline-allow
+  namespace: tenant-app
+spec:
+  description: 'Baseline connectivity managed by Kyverno: same-namespace traffic and DNS. Add app-specific allow rules in separate policies.'
+  egress:
+  - toEndpoints:
+    - {}
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      - port: "53"
+        protocol: TCP
+  endpointSelector: {}
+  ingress:
+  - fromEndpoints:
+    - {}

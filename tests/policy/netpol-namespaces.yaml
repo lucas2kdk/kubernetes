@@ -1,0 +1,16 @@
+# Namespaces for the generate-baseline-netpol exclusion guard in
+# scripts/policy-check.sh. A normal tenant namespace MUST receive a baseline
+# CiliumNetworkPolicy; longhorn-system MUST NOT (it is excluded in lockstep with
+# the default-deny CCNP — a baseline CNP there cuts the CSI sidecars off from the
+# kube-apiserver, the 2026-06-12 outage). kyverno test can't express a
+# "must-not-generate" assertion, so this is checked with `kyverno apply` output.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant-netpol
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: longhorn-system

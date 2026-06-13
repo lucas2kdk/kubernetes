@@ -1,0 +1,180 @@
+# Kyverno policy unit tests — assert the tenant-governing ClusterPolicies (the
+# five pod rules + flux-multi-tenancy) actually fire on known-bad input and
+# correctly exempt platform.io/managed namespaces.
+#
+# Why this exists: the GitOps tree has no in-scope tenant workloads (every
+# chart's pods are Helm-expanded at install time; the lone source Deployment,
+# tsidp, is in a platform-excluded namespace), so policy-check.sh never exercises
+# these rules against a matching resource. A broken match/exclude block — e.g. a
+# typo in the platform.io/managed selector — would sail through CI unnoticed.
+# These fixtures (resources.yaml) close that gap.
+#
+# Run: `kyverno test tests/policy`  (wired into scripts/policy-check.sh).
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: pod-governing-policies
+policies:
+  - ../../platform/base/policies/disallow-latest-tag.yaml
+  - ../../platform/base/policies/disallow-default-namespace.yaml
+  - ../../platform/base/policies/pod-security-baseline.yaml
+  - ../../platform/base/policies/require-pod-probes.yaml
+  - ../../platform/base/policies/require-requests.yaml
+  - ../../platform/base/policies/flux-multi-tenancy.yaml
+  - ../../platform/base/policies/generate-baseline-netpol.yaml
+resources:
+  - resources.yaml
+  - resources-flux.yaml
+# Namespace label map so the platform.io/managed namespaceSelector excludes
+# resolve (kyverno test does not read labels off inline Namespace objects).
+variables: values.yaml
+results:
+  # --- compliant tenant pod: passes every rule ---
+  - policy: disallow-latest-tag
+    rule: require-image-tag
+    resources: [good-pod]
+    kind: Pod
+    result: pass
+  - policy: disallow-latest-tag
+    rule: validate-image-tag
+    resources: [good-pod]
+    kind: Pod
+    result: pass
+  - policy: pod-security-baseline
+    rule: baseline
+    resources: [good-pod]
+    kind: Pod
+    result: pass
+  - policy: require-pod-probes
+    rule: require-probes
+    resources: [good-pod]
+    kind: Pod
+    result: pass
+  - policy: require-resource-requests
+    rule: require-requests
+    resources: [good-pod]
+    kind: Pod
+    result: pass
+
+  # --- violating tenant pod: every applicable rule fires ---
+  - policy: disallow-latest-tag
+    rule: validate-image-tag
+    resources: [bad-pod]
+    kind: Pod
+    result: fail
+  - policy: pod-security-baseline
+    rule: baseline
+    resources: [bad-pod]
+    kind: Pod
+    result: fail
+  - policy: require-pod-probes
+    rule: require-probes
+    resources: [bad-pod]
+    kind: Pod
+    result: fail
+  - policy: require-resource-requests
+    rule: require-requests
+    resources: [bad-pod]
+    kind: Pod
+    result: fail
+
+  # --- tagless image: fails require-image-tag, passes validate-image-tag ---
+  - policy: disallow-latest-tag
+    rule: require-image-tag
+    resources: [untagged-pod]
+    kind: Pod
+    result: fail
+  - policy: disallow-latest-tag
+    rule: validate-image-tag
+    resources: [untagged-pod]
+    kind: Pod
+    result: pass
+
+  # --- same violations in a platform.io/managed namespace: all skipped ---
+  # Regression guard for the namespaceSelector exclusion dedup. If the selector
+  # breaks, these flip to fail and the test goes red.
+  - policy: disallow-latest-tag
+    rule: validate-image-tag
+    resources: [excluded-pod]
+    kind: Pod
+    result: skip
+  - policy: pod-security-baseline
+    rule: baseline
+    resources: [excluded-pod]
+    kind: Pod
+    result: skip
+  - policy: require-pod-probes
+    rule: require-probes
+    resources: [excluded-pod]
+    kind: Pod
+    result: skip
+  - policy: require-resource-requests
+    rule: require-requests
+    resources: [excluded-pod]
+    kind: Pod
+    result: skip
+
+  # --- default-namespace pod: only disallow-default-namespace fires ---
+  - policy: disallow-default-namespace
+    rule: disallow-default-namespace
+    resources: [default-ns-pod]
+    kind: Pod
+    result: fail
+
+  # --- flux-multi-tenancy: tenant Kustomization/HelmRelease isolation ---
+  # Compliant tenant resources pass both applicable rules.
+  - policy: flux-multi-tenancy
+    rule: serviceAccountName
+    resources: [good-kustomization]
+    kind: Kustomization
+    result: pass
+  - policy: flux-multi-tenancy
+    rule: kustomizationSourceRefNamespace
+    resources: [good-kustomization]
+    kind: Kustomization
+    result: pass
+  - policy: flux-multi-tenancy
+    rule: serviceAccountName
+    resources: [good-helmrelease]
+    kind: HelmRelease
+    result: pass
+  - policy: flux-multi-tenancy
+    rule: helmReleaseSourceRefNamespace
+    resources: [good-helmrelease]
+    kind: HelmRelease
+    result: pass
+  # Missing serviceAccountName is rejected (Enforce rule).
+  - policy: flux-multi-tenancy
+    rule: serviceAccountName
+    resources: [bad-kustomization-nosa]
+    kind: Kustomization
+    result: fail
+  # A sourceRef reaching into another namespace is rejected.
+  - policy: flux-multi-tenancy
+    rule: kustomizationSourceRefNamespace
+    resources: [bad-kustomization-xns]
+    kind: Kustomization
+    result: fail
+  - policy: flux-multi-tenancy
+    rule: helmReleaseSourceRefNamespace
+    resources: [bad-helmrelease-xns]
+    kind: HelmRelease
+    result: fail
+  # Same SA omission in a platform.io/managed namespace is exempt — skipped.
+  - policy: flux-multi-tenancy
+    rule: serviceAccountName
+    resources: [excluded-kustomization]
+    kind: Kustomization
+    result: skip
+
+  # --- generate-baseline-netpol: a tenant namespace gets the baseline CNP ---
+  # Asserts the generated policy's full spec (same-ns ingress/egress + DNS). The
+  # longhorn-system exclusion (the 2026-06-12 CSI outage guard) can't be asserted
+  # here — kyverno test has no "must NOT generate" result — so policy-check.sh
+  # checks that negative separately via `kyverno apply`.
+  - policy: generate-baseline-netpol
+    rule: baseline-cnp
+    resources: [tenant-app]
+    kind: Namespace
+    generatedResource: generated-baseline-cnp.yaml
+    result: pass

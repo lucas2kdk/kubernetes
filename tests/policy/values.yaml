@@ -1,0 +1,15 @@
+# Namespace → labels map so the policies' namespaceSelector excludes resolve in
+# the CLI. Without this, `kyverno test` can't see a namespace's labels and the
+# platform.io/managed exclusion never matches — every excluded-pod assertion
+# would wrongly report `fail` instead of `skip`. Mirrors the values file
+# scripts/policy-check.sh builds for the live-rendered bundle.
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Values
+namespaceSelector:
+  - name: tenant-app
+    labels: {}
+  - name: platform-thing
+    labels:
+      platform.io/managed: "true"
+  - name: default
+    labels: {}

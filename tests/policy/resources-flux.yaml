@@ -1,0 +1,104 @@
+# Fixtures for the flux-multi-tenancy ClusterPolicy (see kyverno-test.yaml).
+# Kustomization/HelmRelease objects in a tenant namespace must (1) set
+# spec.serviceAccountName and (2) keep their sourceRef in their own namespace.
+# Platform.io/managed namespaces and flux-system are exempt. Namespaces
+# (tenant-app, platform-thing) are defined in resources.yaml.
+---
+# Compliant tenant Kustomization: has SA, sourceRef in its own namespace.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: good-kustomization
+  namespace: tenant-app
+spec:
+  interval: 10m
+  path: ./app
+  prune: true
+  serviceAccountName: tenant-reconciler
+  sourceRef:
+    kind: GitRepository
+    name: app
+    namespace: tenant-app
+---
+# Missing serviceAccountName — must FAIL the serviceAccountName rule.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: bad-kustomization-nosa
+  namespace: tenant-app
+spec:
+  interval: 10m
+  path: ./app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: app
+    namespace: tenant-app
+---
+# sourceRef points at another namespace — must FAIL kustomizationSourceRefNamespace.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: bad-kustomization-xns
+  namespace: tenant-app
+spec:
+  interval: 10m
+  path: ./app
+  prune: true
+  serviceAccountName: tenant-reconciler
+  sourceRef:
+    kind: GitRepository
+    name: shared
+    namespace: flux-system
+---
+# Compliant tenant HelmRelease: has SA, chart sourceRef in its own namespace.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: good-helmrelease
+  namespace: tenant-app
+spec:
+  interval: 1h
+  serviceAccountName: tenant-reconciler
+  chart:
+    spec:
+      chart: app
+      version: "1.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: app
+        namespace: tenant-app
+---
+# chart sourceRef points at another namespace — must FAIL helmReleaseSourceRefNamespace.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: bad-helmrelease-xns
+  namespace: tenant-app
+spec:
+  interval: 1h
+  serviceAccountName: tenant-reconciler
+  chart:
+    spec:
+      chart: app
+      version: "1.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: shared
+        namespace: flux-system
+---
+# Same SA omission, but in a platform.io/managed namespace — must be SKIPPED
+# (regression guard for the exclusion on this policy too).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: excluded-kustomization
+  namespace: platform-thing
+spec:
+  interval: 10m
+  path: ./app
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: app
+    namespace: platform-thing

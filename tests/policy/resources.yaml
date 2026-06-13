@@ -1,0 +1,138 @@
+# Fixtures for the Kyverno policy unit tests (see kyverno-test.yaml).
+#
+# The rendered GitOps tree contains almost no in-scope workloads — every chart's
+# pods are expanded by Helm at install time, and the only source-tree Deployment
+# (tsidp) sits in a platform-excluded namespace. So `policy-check.sh` alone never
+# actually exercises the pod-governing ClusterPolicies. These hand-written
+# fixtures do: a known-good pod that must pass every rule, a known-bad pod that
+# must trip each one, the same bad pod in a platform.io/managed namespace that
+# must be skipped (guards the namespace-exclusion dedup), and a default-namespace
+# pod for disallow-default-namespace.
+---
+# In-scope tenant namespace: no platform.io/managed label, not a system ns.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant-app
+---
+# Platform-managed namespace: carries the label, so the pod policies exclude it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: platform-thing
+  labels:
+    platform.io/managed: "true"
+---
+# Compliant pod in a tenant namespace — must PASS every rule.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: good-pod
+  namespace: tenant-app
+spec:
+  containers:
+    - name: app
+      image: nginx:1.27.2
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 80
+        periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 80
+        periodSeconds: 10
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+---
+# Violating pod in a tenant namespace — must FAIL latest-tag / probes /
+# requests / pod-security-baseline (in-scope, so all rules apply).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bad-pod
+  namespace: tenant-app
+spec:
+  hostNetwork: true
+  containers:
+    - name: app
+      image: nginx:latest
+      securityContext:
+        privileged: true
+---
+# Tagless image in a tenant namespace — must FAIL require-image-tag (no tag at
+# all) while PASSING validate-image-tag (no ':latest'). Covers the other half of
+# disallow-latest-tag, which the :latest bad-pod above doesn't exercise.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: untagged-pod
+  namespace: tenant-app
+spec:
+  containers:
+    - name: app
+      image: nginx
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 80
+        periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 80
+        periodSeconds: 10
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+---
+# Same violations, but in a platform.io/managed namespace — every pod policy
+# must SKIP it. This is the regression guard for the namespaceSelector dedup.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: excluded-pod
+  namespace: platform-thing
+spec:
+  hostNetwork: true
+  containers:
+    - name: app
+      image: nginx:latest
+      securityContext:
+        privileged: true
+---
+# Pod in the default namespace — must FAIL disallow-default-namespace.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: default-ns-pod
+  namespace: default
+spec:
+  containers:
+    - name: app
+      image: nginx:1.27.2
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 80
+        periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 80
+        periodSeconds: 10
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
