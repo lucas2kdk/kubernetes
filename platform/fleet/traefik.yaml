@@ -5,7 +5,7 @@ metadata:
   name: traefik
   namespace: flux-system
 spec:
-  path: ./platform/base/traefik
+  path: ./base/traefik
   dependsOn:
     # Serves TLS from cert-manager-issued certs, so cert-manager comes first.
     - name: cert-manager

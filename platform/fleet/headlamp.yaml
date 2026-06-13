@@ -5,7 +5,7 @@ metadata:
   name: headlamp
   namespace: flux-system
 spec:
-  path: ./platform/base/headlamp
+  path: ./base/headlamp
   dependsOn:
     # Reads its OIDC client secret from Vault, so the store must exist first.
     - name: external-secrets-stores

@@ -17,6 +17,7 @@ resources:
   - dashboards/11001-cert-manager.yaml
   - dashboards/15987-kyverno.yaml
   - dashboards/16888-longhorn.yaml
+  - dashboards/platform-version.yaml
 
 # The committed Grafana dashboard JSON carries literal ${...} tokens (Grafana
 # template variables) that Flux's post-build envsubst can't parse — it fails the

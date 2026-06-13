@@ -5,7 +5,7 @@ metadata:
   name: cert-manager-issuers
   namespace: flux-system
 spec:
-  path: ./platform/base/cert-manager-issuers
+  path: ./base/cert-manager-issuers
   dependsOn:
     # ClusterIssuer is a cert-manager CRD — controller must be up first. With
     # wait:true (from _defaults) this only reads Ready once issuers register

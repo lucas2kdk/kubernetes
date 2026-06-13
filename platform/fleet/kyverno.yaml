@@ -5,7 +5,7 @@ metadata:
   name: kyverno
   namespace: flux-system
 spec:
-  path: ./platform/base/kyverno
+  path: ./base/kyverno
   dependsOn:
     # Ships ServiceMonitors, which need the Prometheus-Operator CRDs to exist first.
     - name: kube-prometheus-stack
