@@ -30,6 +30,7 @@ spec:
           - vector
           - headlamp
           - tsidp
+          - trivy-system
           # longhorn-system is excluded from default-deny and manages its own
           # connectivity; adding it here prevents allow-ingress-from-traefik from
           # being the only policy applied and implicitly blocking intra-namespace

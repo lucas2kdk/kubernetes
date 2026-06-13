@@ -34,6 +34,7 @@ spec:
           - vector
           - headlamp
           - tsidp
+          - trivy-system
           # longhorn-system must stay in lockstep with default-deny and
           # allow-ingress-from-traefik: selecting it here with an egressDeny
           # rule enables Cilium egress policy enforcement on its pods, which

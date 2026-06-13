@@ -43,6 +43,7 @@ spec:
                 - monitoring
                 - netdata
                 - vector
+                - trivy-system
                 # Must stay in lockstep with the default-deny CCNP exclusions:
                 # longhorn-system is excluded there, so it gets no kube-apiserver
                 # egress allow — a baseline CNP here flips it into default-deny

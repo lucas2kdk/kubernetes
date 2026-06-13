@@ -1,0 +1,42 @@
+# Trivy Operator runs CIS benchmark on schedule (ClusterComplianceReport),
+# plus config-audit/vuln/rbac assessments for what's actually running in-cluster.
+# Pairs with image-scan.sh which scans images in Git before they're applied;
+# the operator catches drift between desired state and runtime reality.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: trivy-operator
+  namespace: trivy-system
+spec:
+  interval: 1h
+  releaseName: trivy-operator
+  chart:
+    spec:
+      chart: trivy-operator
+      version: "0.33.1" # Renovate-managed
+      sourceRef:
+        kind: HelmRepository
+        name: aqua
+        namespace: flux-system
+  install:
+    crds: Create
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  values:
+    serviceMonitor:
+      enabled: true
+    compliance:
+      # Weekly CIS benchmark generation — Monday 06:00 UTC, matches image-scan.sh cadence.
+      cron: "0 6 * * 1"
+    operator:
+      # explicit defaults — this is what we deploy this operator for
+      vulnerabilityScannerEnabled: true
+      configAuditScannerEnabled: true
+      rbacAssessmentScannerEnabled: true
+      clusterComplianceEnabled: true
+    trivy:
+      ignoreUnfixed: true

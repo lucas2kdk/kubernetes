@@ -36,6 +36,7 @@ spec:
           - vector
           - headlamp
           - tsidp
+          - trivy-system
           # Terraform-managed storage layer; excluded so Prometheus can scrape
           # longhorn-manager (:9500) for the Longhorn dashboard and so volume
           # attach/rebuild is never gated on a network policy.

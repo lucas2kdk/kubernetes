@@ -55,7 +55,10 @@ infrastructure, **Flux owns everything inside Kubernetes**, organized as
     proxy in auth mode — see [Tailscale access](#tailscale-access-api-server-proxy)),
     `tsidp` (Tailscale OIDC identity provider — the issuer behind Headlamp and
     Grafana logins; a plain Deployment that joins the tailnet and exposes its
-    discovery/JWKS endpoints via Funnel), and `kube-prometheus-stack`
+    discovery/JWKS endpoints via Funnel), `trivy-operator` (weekly on-cluster
+    CIS Kubernetes Benchmark plus workload vulnerability, config-audit and RBAC
+    assessments — surfaces as `ClusterComplianceReport`, `VulnerabilityReport`,
+    `ConfigAuditReport`, `RbacAssessmentReport`), and `kube-prometheus-stack`
     (Prometheus + Grafana). Grafana is reached on
     the tailnet at `https://grafana.<tailnet>.ts.net` (Tailscale ingress, tsidp
     OIDC — same model as Headlamp); Prometheus keeps a self-pruning ≤100Gi
