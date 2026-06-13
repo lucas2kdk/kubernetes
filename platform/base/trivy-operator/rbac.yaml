@@ -1,0 +1,27 @@
+# The trivy-operator chart only aggregates configauditreports,
+# exposedsecretreports and vulnerabilityreports into the built-in `view` role.
+# The kubebeam Headlamp plugin also lists cluster-scoped reports
+# (clustercompliancereports etc.) and the RBAC/infra/SBOM assessments — without
+# this, view-only users (incl. the tailnet `maintainers` group) get 403 and the
+# plugin tabs render empty.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: aggregate-trivy-reports-view-extra
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
+    rbac.authorization.k8s.io/aggregate-to-admin: "true"
+rules:
+  - apiGroups: ["aquasecurity.github.io"]
+    resources:
+      - clustercompliancereports
+      - clusterconfigauditreports
+      - clusterinfraassessmentreports
+      - clusterrbacassessmentreports
+      - clustersbomreports
+      - clustervulnerabilityreports
+      - infraassessmentreports
+      - rbacassessmentreports
+      - sbomreports
+    verbs: ["get", "list", "watch"]
