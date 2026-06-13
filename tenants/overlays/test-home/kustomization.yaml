@@ -12,4 +12,4 @@ patches:
     patch: |-
       - op: replace
         path: /spec/values/ingress/host
-        value: hello-world-prod
+        value: hello-world-test
