@@ -1,0 +1,44 @@
+name: Image CVE scan
+
+# Weekly container-image vulnerability scan. Deliberately NOT a PR check: CVEs
+# are disclosed independently of commits, so gating PRs on them would go red for
+# reasons unrelated to the change. Renders every HelmRelease + plain manifest to
+# discover images, then scans each with Trivy (see scripts/image-scan.sh).
+# Results land in the run summary; a CRITICAL fails the run so GitHub notifies.
+on:
+  schedule:
+    # Mondays 06:00 UTC — after the Renovate window so bumped charts get scanned.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # renovate: datasource=github-releases depName=kubernetes-sigs/kustomize extractVersion=^kustomize/v(?<version>.+)$
+  KUSTOMIZE_VERSION: "5.7.1"
+  # renovate: datasource=github-releases depName=aquasecurity/trivy extractVersion=^v(?<version>.+)$
+  TRIVY_VERSION: "0.71.1"
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          kustomize: ${{ env.KUSTOMIZE_VERSION }}
+          trivy: ${{ env.TRIVY_VERSION }}
+
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      # helm and yq are preinstalled on ubuntu-latest runners.
+      - name: Scan images
+        run: just scan | tee -a "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,104 @@
+name: PR
+
+# Gate every pull request to main. Four independent checks, all runnable
+# locally via `just check`:
+#   validate — build each kustomization the way Flux does + kubeconform schemas
+#   policy   — evaluate the Kyverno ClusterPolicies against the rendered manifests
+#   secrets  — scan the tree for committed secrets (gitleaks)
+#   lint     — lint these workflow files (actionlint)
+on:
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # renovate: datasource=github-releases depName=kubernetes-sigs/kustomize extractVersion=^kustomize/v(?<version>.+)$
+  KUSTOMIZE_VERSION: "5.7.1"
+  # renovate: datasource=github-releases depName=yannh/kubeconform extractVersion=^v(?<version>.+)$
+  KUBECONFORM_VERSION: "0.7.0"
+  # renovate: datasource=github-releases depName=kyverno/kyverno extractVersion=^v(?<version>.+)$
+  KYVERNO_VERSION: "1.18.1"
+  # renovate: datasource=github-releases depName=gitleaks/gitleaks extractVersion=^v(?<version>.+)$
+  GITLEAKS_VERSION: "8.30.1"
+  # renovate: datasource=github-releases depName=rhysd/actionlint extractVersion=^v(?<version>.+)$
+  ACTIONLINT_VERSION: "1.7.12"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          kustomize: ${{ env.KUSTOMIZE_VERSION }}
+          kubeconform: ${{ env.KUBECONFORM_VERSION }}
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Validate manifests
+        run: just validate
+
+  policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          kustomize: ${{ env.KUSTOMIZE_VERSION }}
+          kyverno: ${{ env.KYVERNO_VERSION }}
+
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Evaluate policies
+        run: just policy
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          gitleaks: ${{ env.GITLEAKS_VERSION }}
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Scan for secrets
+        run: just secrets
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          actionlint: ${{ env.ACTIONLINT_VERSION }}
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Lint workflows
+        run: just lint

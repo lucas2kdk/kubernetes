@@ -34,6 +34,27 @@
       "packageNameTemplate": "headlamp-k8s/plugins",
       "extractVersionTemplate": "^{{{depName}}}-(?<version>.+)$",
       "versioningTemplate": "semver-coerced"
+    },
+    {
+      "customType": "regex",
+      "description": "tsidp runs as a plain Deployment (not a HelmRelease), so the flux/helm-values managers don't see its image tag. Track it directly against the ghcr.io image.",
+      "managerFilePatterns": [
+        "/^platform/base/tsidp/deployment\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image: (?<depName>ghcr\\.io/tailscale/tsidp):(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "CI tool versions pinned as env vars in the PR workflow and fetched via curl. The github-actions manager only tracks `uses:` tags, so these are matched off the `# renovate:` annotation comments above each var.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+) extractVersion=(?<extractVersion>\\S+)\\s+\\w+:\\s*\"(?<currentValue>\\S+)\""
+      ]
     }
   ],
   "packageRules": [

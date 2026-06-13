@@ -1,0 +1,78 @@
+name: Setup tools
+description: >-
+  Install the pinned CLI tools used by the validation and scan jobs. Pass a
+  version (without leading 'v') to install a tool; omit an input to skip it.
+  Versions stay pinned in the calling workflow's env block (with the
+  '# renovate:' annotations Renovate tracks) and are passed in here — keep them
+  there, not in this action, or Renovate stops seeing them.
+
+inputs:
+  kustomize:
+    description: kustomize version, e.g. 5.7.1
+    default: ""
+  kubeconform:
+    description: kubeconform version, e.g. 0.7.0
+    default: ""
+  kyverno:
+    description: kyverno CLI version, e.g. 1.18.1
+    default: ""
+  gitleaks:
+    description: gitleaks version, e.g. 8.30.1
+    default: ""
+  trivy:
+    description: trivy version, e.g. 0.71.1
+    default: ""
+  actionlint:
+    description: actionlint version, e.g. 1.7.12
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Install kustomize
+      if: inputs.kustomize != ''
+      shell: bash
+      run: |
+        curl -sSfL \
+          "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${{ inputs.kustomize }}/kustomize_v${{ inputs.kustomize }}_linux_amd64.tar.gz" \
+          | tar -xz -C /usr/local/bin kustomize
+
+    - name: Install kubeconform
+      if: inputs.kubeconform != ''
+      shell: bash
+      run: |
+        curl -sSfL \
+          "https://github.com/yannh/kubeconform/releases/download/v${{ inputs.kubeconform }}/kubeconform-linux-amd64.tar.gz" \
+          | tar -xz -C /usr/local/bin kubeconform
+
+    - name: Install kyverno CLI
+      if: inputs.kyverno != ''
+      shell: bash
+      run: |
+        curl -sSfL \
+          "https://github.com/kyverno/kyverno/releases/download/v${{ inputs.kyverno }}/kyverno-cli_v${{ inputs.kyverno }}_linux_x86_64.tar.gz" \
+          | tar -xz -C /usr/local/bin kyverno
+
+    - name: Install gitleaks
+      if: inputs.gitleaks != ''
+      shell: bash
+      run: |
+        curl -sSfL \
+          "https://github.com/gitleaks/gitleaks/releases/download/v${{ inputs.gitleaks }}/gitleaks_${{ inputs.gitleaks }}_linux_x64.tar.gz" \
+          | tar -xz -C /usr/local/bin gitleaks
+
+    - name: Install trivy
+      if: inputs.trivy != ''
+      shell: bash
+      run: |
+        curl -sSfL \
+          "https://github.com/aquasecurity/trivy/releases/download/v${{ inputs.trivy }}/trivy_${{ inputs.trivy }}_Linux-64bit.tar.gz" \
+          | tar -xz -C /usr/local/bin trivy
+
+    - name: Install actionlint
+      if: inputs.actionlint != ''
+      shell: bash
+      run: |
+        curl -sSfL \
+          "https://github.com/rhysd/actionlint/releases/download/v${{ inputs.actionlint }}/actionlint_${{ inputs.actionlint }}_linux_amd64.tar.gz" \
+          | tar -xz -C /usr/local/bin actionlint
