@@ -3,5 +3,6 @@ kind: Kustomization
 namespace: hello-world
 resources:
   - namespace.yaml
+  - rbac.yaml
   - source.yaml
   - release.yaml

@@ -5,6 +5,7 @@ metadata:
   namespace: hello-world
 spec:
   interval: 1h
+  serviceAccountName: hello-world
   releaseName: hello-world
   chart:
     spec:
