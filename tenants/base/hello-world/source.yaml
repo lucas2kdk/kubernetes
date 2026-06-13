@@ -5,7 +5,7 @@ metadata:
   namespace: hello-world
 spec:
   interval: 5m
-  url: https://github.com/lucas2kdk/Hello-World
+  url: https://github.com/lucas2kdk/hailmary-helloworld
   ref:
     branch: main
   ignore: |
