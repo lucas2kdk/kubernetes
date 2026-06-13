@@ -13,7 +13,7 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: capacitor
+  name: capacitor-manifests
   namespace: flux-system
 spec:
   targetNamespace: flux-system
