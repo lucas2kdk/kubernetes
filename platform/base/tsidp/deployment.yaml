@@ -59,10 +59,21 @@ spec:
           volumeMounts:
             - name: state
               mountPath: /data
+          # No liveness/readiness probe on purpose: tsidp serves OIDC over the
+          # tailnet via tsnet + Funnel, so it binds no port on the pod IP (and
+          # sits behind no Service) — a kubelet httpGet/tcpSocket probe would
+          # fail against the pod IP and crash-loop a healthy auth provider. The
+          # single process exiting already triggers a restart.
           resources:
             requests:
               cpu: 50m
-              memory: 64Mi
+              # Observed working set ~20Mi; 128Mi gives comfortable headroom.
+              memory: 128Mi
+            limits:
+              # Memory limit only — no CPU limit (CPU limits cause throttling,
+              # per the repo convention). Caps a runaway well above the working
+              # set without risking an OOM-kill of the auth provider.
+              memory: 256Mi
       volumes:
         - name: state
           hostPath:
