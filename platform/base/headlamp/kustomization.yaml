@@ -6,4 +6,5 @@ resources:
   - release.yaml
   - ingress.yaml
   - external-secret.yaml
+  - external-secret-kubeconfigs.yaml
   - rbac-oidc.yaml
