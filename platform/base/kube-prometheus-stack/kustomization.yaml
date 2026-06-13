@@ -5,6 +5,8 @@ resources:
   - source.yaml
   - release.yaml
   - external-secret.yaml
+  - external-secret-alertmanager.yaml
+  - prometheusrules.yaml
   - ingress.yaml
   - dashboards/15661-k8s.yaml
   - dashboards/16714-flux2.yaml
