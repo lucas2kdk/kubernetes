@@ -18,6 +18,7 @@ policies:
   - ../../platform/base/policies/disallow-latest-tag.yaml
   - ../../platform/base/policies/disallow-default-namespace.yaml
   - ../../platform/base/policies/pod-security-baseline.yaml
+  - ../../platform/base/policies/pod-security-restricted.yaml
   - ../../platform/base/policies/require-pod-probes.yaml
   - ../../platform/base/policies/require-requests.yaml
   - ../../platform/base/policies/flux-multi-tenancy.yaml
@@ -45,6 +46,11 @@ results:
     resources: [good-pod]
     kind: Pod
     result: pass
+  - policy: pod-security-restricted
+    rule: restricted
+    resources: [good-pod]
+    kind: Pod
+    result: pass
   - policy: require-pod-probes
     rule: require-probes
     resources: [good-pod]
@@ -64,6 +70,11 @@ results:
     result: fail
   - policy: pod-security-baseline
     rule: baseline
+    resources: [bad-pod]
+    kind: Pod
+    result: fail
+  - policy: pod-security-restricted
+    rule: restricted
     resources: [bad-pod]
     kind: Pod
     result: fail
@@ -100,6 +111,11 @@ results:
     result: skip
   - policy: pod-security-baseline
     rule: baseline
+    resources: [excluded-pod]
+    kind: Pod
+    result: skip
+  - policy: pod-security-restricted
+    rule: restricted
     resources: [excluded-pod]
     kind: Pod
     result: skip

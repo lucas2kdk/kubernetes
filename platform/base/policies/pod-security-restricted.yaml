@@ -1,0 +1,39 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: pod-security-restricted
+  annotations:
+    policies.kyverno.io/title: Pod Security Standards (Restricted)
+    policies.kyverno.io/category: Pod Security Standards
+    policies.kyverno.io/description: >-
+      Enforce the Kubernetes Pod Security Standards "restricted" profile:
+      no privilege escalation, must run as non-root, seccomp profile required,
+      drop all capabilities, and only a safe set of volume types. Builds on top
+      of pod-security-baseline; both policies apply to tenant workloads.
+spec:
+  background: true
+  rules:
+    - name: restricted
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-node-lease
+                - kube-public
+                - flux-system
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  platform.io/managed: "true"
+      validate:
+        # ponytail: Audit — promote to Enforce once policy-reporter shows clean
+        failureAction: Audit
+        podSecurity:
+          level: restricted
+          version: latest
