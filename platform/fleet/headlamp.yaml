@@ -4,7 +4,7 @@ metadata:
   name: headlamp
   namespace: flux-system
 spec:
-  path: ./platform/base/headlamp
+  path: ./base/headlamp
   dependsOn:
     - name: external-secrets-stores
   postBuild:

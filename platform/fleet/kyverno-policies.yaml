@@ -4,6 +4,6 @@ metadata:
   name: kyverno-policies
   namespace: flux-system
 spec:
-  path: ./platform/base/policies
+  path: ./base/policies
   dependsOn:
     - name: kyverno

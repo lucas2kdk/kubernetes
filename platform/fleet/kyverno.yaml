@@ -4,6 +4,6 @@ metadata:
   name: kyverno
   namespace: flux-system
 spec:
-  path: ./platform/base/kyverno
+  path: ./base/kyverno
   dependsOn:
     - name: kube-prometheus-stack

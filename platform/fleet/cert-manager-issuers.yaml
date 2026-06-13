@@ -4,7 +4,7 @@ metadata:
   name: cert-manager-issuers
   namespace: flux-system
 spec:
-  path: ./platform/base/cert-manager-issuers
+  path: ./base/cert-manager-issuers
   dependsOn:
     - name: cert-manager
     - name: external-secrets-stores

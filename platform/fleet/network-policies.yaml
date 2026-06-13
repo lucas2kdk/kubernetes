@@ -4,4 +4,4 @@ metadata:
   name: network-policies
   namespace: flux-system
 spec:
-  path: ./platform/base/network
+  path: ./base/network

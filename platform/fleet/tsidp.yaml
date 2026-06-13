@@ -4,6 +4,6 @@ metadata:
   name: tsidp
   namespace: flux-system
 spec:
-  path: ./platform/base/tsidp
+  path: ./base/tsidp
   dependsOn:
     - name: external-secrets-stores
