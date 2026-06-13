@@ -249,9 +249,30 @@ Worth doing? If so I'll write it and you can confirm on the first PR run. This i
 the main remaining structural improvement I can see; most other safe,
 locally-verifiable work is done (see summary below).
 
+## Resolved with live-cluster data (2026-06-13, lucas provided `flux get hr` + `kubectl`)
+
+### D1 — RESOLVED. Pinned the four live floating chart versions
+`flux get helmreleases -A` gave the running versions; pinned each to exactly what
+is deployed (no upgrade triggered on reconcile), Renovate now tracks them like
+the others: kyverno `3.8.1`, policy-reporter `3.7.4`, headlamp `0.42.0`,
+kube-prometheus-stack `86.2.2`. netdata/vector left floating — they're scaffolded
+stubs with no live deployment to read a version from.
+
+### D2 — RESOLVED (decision: stay probeless, documented). 
+`kubectl describe` confirmed the tsidp container declares **no ports** — tsnet +
+Funnel binds on the tailnet interface, not the pod IP, and it's behind no
+Service. A kubelet httpGet/tcpSocket probe would fail against the pod IP and
+crash-loop a healthy auth provider. Added a comment in deployment.yaml explaining
+the deliberate no-probe decision (the single process exiting already restarts).
+
+### D3 — RESOLVED. Added a memory limit + bumped the request.
+`kubectl top` showed ~20Mi working set. Set `requests.memory: 128Mi` (comfortable
+headroom) and `limits.memory: 256Mi` (caps a runaway well above the working set
+without OOM risk). No CPU limit, per the repo convention (CPU limits throttle).
+
 ## Open doubts (need human / live cluster)
 
-### D1. Floating HelmRelease chart versions (`X.x`) vs. reproducibility goal
+### D1. Floating HelmRelease chart versions (`X.x`) vs. reproducibility goal — RESOLVED (see above; original analysis retained for context)
 `platform/base/*/release.yaml` mixes exact pins (traefik `40.3.0`, cert-manager
 `v1.20.2`, tailscale `1.98.4`, external-secrets `2.6.0`) with floating ranges
 that carry `# TODO: pin exact version` markers:
@@ -268,7 +289,7 @@ flux manager won't tighten an already-satisfied range on its own either.
 version and set `version:` to it exactly; Renovate then bumps it via PR like the
 already-pinned ones. Low effort, but needs cluster read access I don't have.
 
-### D2. tsidp Deployment has no liveness/readiness probes
+### D2. tsidp Deployment has no liveness/readiness probes — RESOLVED (see above; original analysis retained for context)
 `platform/base/tsidp/deployment.yaml` runs without probes. The repo enforces
 probes on tenant pods (`require-pod-probes`, Audit) but tsidp's namespace is
 exempt. **Why I didn't add them:** tsidp serves OIDC over the tailnet via tsnet
@@ -281,7 +302,7 @@ running pod (which port tsnet binds on the pod IP, if any).
 readiness probe on it; otherwise leave probeless and consider documenting why in
 the deployment comment.
 
-### D3. tsidp container has a memory request but no memory limit (low priority)
+### D3. tsidp container has a memory request but no memory limit (low priority) — RESOLVED (see above; original analysis retained for context)
 `requests: {cpu: 50m, memory: 64Mi}`, no limits. The repo deliberately doesn't
 *require* limits (`require-requests` comment: CPU limits cause throttling). A
 **memory** limit has no throttling downside and would cap a runaway on the
