@@ -6,3 +6,4 @@ resources:
   - release.yaml
   - rbac-token-review.yaml
   - pdb.yaml
+  - pdb-webhook.yaml

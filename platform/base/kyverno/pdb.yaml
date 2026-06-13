@@ -4,7 +4,11 @@ metadata:
   name: kyverno-admission-controller
   namespace: kyverno
 spec:
-  minAvailable: 1
+  # ponytail: maxUnavailable rather than minAvailable — at 1 replica, minAvailable: 1
+  # yields 0 disruptions allowed and deadlocks kubectl drain (same class as the
+  # forceFailurePolicyIgnore issue). maxUnavailable: 1 allows drain at any replica count
+  # while still capping disruptions to 1 when scaled to 3+.
+  maxUnavailable: 1
   selector:
     matchLabels:
       app.kubernetes.io/component: admission-controller
