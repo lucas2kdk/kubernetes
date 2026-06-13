@@ -22,7 +22,7 @@ env:
   # renovate: datasource=github-releases depName=kubernetes-sigs/kustomize extractVersion=^kustomize/v(?<version>.+)$
   KUSTOMIZE_VERSION: "5.8.1"
   # renovate: datasource=github-releases depName=yannh/kubeconform extractVersion=^v(?<version>.+)$
-  KUBECONFORM_VERSION: "0.7.0"
+  KUBECONFORM_VERSION: "0.8.0"
   # renovate: datasource=github-releases depName=kyverno/kyverno extractVersion=^v(?<version>.+)$
   KYVERNO_VERSION: "1.18.1"
   # renovate: datasource=github-releases depName=gitleaks/gitleaks extractVersion=^v(?<version>.+)$
