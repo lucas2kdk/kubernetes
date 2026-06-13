@@ -83,3 +83,12 @@ spec:
                 # Longhorn recommends keeping policy engines out of its
                 # namespace so volume attach/rebuild is never gated on them.
                 - longhorn-system
+    # Helm test pods (helm.sh/hook: test) default the readiness-checker image to
+    # the mutable :latest tag. Pin it (to the chart's kyverno app version) so the
+    # tag isn't a moving target and the image CVE scan tracks a fixed ref. Full
+    # registry/repository/tag so Renovate can bump it.
+    test:
+      image:
+        registry: ghcr.io
+        repository: kyverno/readiness-checker
+        tag: v1.18.1
