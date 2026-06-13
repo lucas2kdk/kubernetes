@@ -1,0 +1,9 @@
+# test-home runs a subset of the fleet (external-secrets, tailscale-operator) plus its own AppRole external-secrets-stores override.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - flux-system
+  - cluster-vars.yaml
+  - ../../platform/fleet/external-secrets.yaml
+  - ../../platform/fleet/tailscale-operator.yaml
+  - external-secrets-stores.yaml

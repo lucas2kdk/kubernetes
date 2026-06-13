@@ -36,14 +36,36 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 echo "== rendering manifests reconciled by clusters/$cluster =="
-# Active (non-commented) `path:` targets from this cluster's Flux Kustomizations.
+# Building the cluster's kustomization.yaml emits one Flux Kustomization per
+# component it runs — most from the shared platform/fleet/, plus per-cluster CRs
+# (tenants, any override). Take each CR's `spec.path` and render it into one
+# bundle. Skip the self-referential flux-system sync Kustomization (whose path is
+# ./clusters/<name>), which would otherwise re-emit the cluster's own CRs.
+build "clusters/$cluster" > "$tmp/cluster-objs.yaml"
 while read -r dir; do
   [ -f "$dir/kustomization.yaml" ] || continue
   printf '→ %s\n' "$dir"
   { echo "---"; build "$dir"; } >> "$tmp/resources.yaml"
-done < <(grep -rhE '^\s*path:' "clusters/$cluster"/*.yaml \
-           | grep -v '^\s*#' \
-           | sed -E 's#.*path:\s*\./##' | sort -u)
+done < <(python3 - "$tmp/cluster-objs.yaml" <<'PY'
+import sys, yaml
+seen = set()
+for d in yaml.safe_load_all(open(sys.argv[1])):
+    if not isinstance(d, dict):
+        continue
+    if not d.get("apiVersion", "").startswith("kustomize.toolkit.fluxcd.io"):
+        continue
+    if d.get("kind") != "Kustomization":
+        continue
+    if d.get("metadata", {}).get("name") == "flux-system":
+        continue
+    path = ((d.get("spec") or {}).get("path") or "").strip()
+    if path.startswith("./"):
+        path = path[2:]
+    if path and path not in seen:
+        seen.add(path)
+        print(path)
+PY
+)
 
 # Namespace → labels map, so namespaceSelector excludes resolve in the CLI.
 python3 - "$tmp/resources.yaml" > "$tmp/values.yaml" <<'PY'

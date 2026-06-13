@@ -1,0 +1,10 @@
+# Per-cluster substitution values for test-home. Consumed by the shared fleet
+# Flux Kustomizations via postBuild.substituteFrom (ConfigMap/cluster-vars):
+# the ${cluster_name} token in base manifests is replaced with this value.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-vars
+  namespace: flux-system
+data:
+  cluster_name: test-home
