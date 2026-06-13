@@ -1,0 +1,13 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: external-secrets
+  namespace: external-secrets
+spec:
+  # ponytail: maxUnavailable — same reasoning as kyverno PDB; minAvailable: 1 at 1 replica
+  # deadlocks drain.
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-secrets
+      app.kubernetes.io/instance: external-secrets

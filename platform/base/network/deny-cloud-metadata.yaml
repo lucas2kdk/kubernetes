@@ -30,8 +30,6 @@ spec:
           - tailscale
           - traefik
           - monitoring
-          - netdata
-          - vector
           - headlamp
           - tsidp
           - trivy-system
