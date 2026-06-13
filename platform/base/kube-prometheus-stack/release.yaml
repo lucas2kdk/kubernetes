@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: kube-prometheus-stack
-      version: "86.x" # TODO: pin exact version (Renovate-managed)
+      version: "86.2.2" # Renovate-managed
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
