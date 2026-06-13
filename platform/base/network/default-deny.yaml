@@ -25,15 +25,13 @@ spec:
           - policy-reporter
           # Platform component namespaces — managed by the platform, not tenant
           # workloads. Excluded so cert-manager (ACME/DNS), ESO (Vault), Tailscale
-          # (tailnet), Traefik (LB ingress), Prometheus (scrape) and Vector (Humio)
-          # keep working. Tighten with explicit allow policies in V2.
+          # (tailnet), Traefik (LB ingress), and Prometheus (scrape) keep working.
+          # Tighten with explicit allow policies in V2.
           - cert-manager
           - external-secrets
           - tailscale
           - traefik
           - monitoring
-          - netdata
-          - vector
           - headlamp
           - tsidp
           - trivy-system

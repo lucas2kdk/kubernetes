@@ -5,3 +5,4 @@ resources:
   - source.yaml
   - release.yaml
   - rbac-token-review.yaml
+  - pdb.yaml
