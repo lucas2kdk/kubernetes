@@ -25,17 +25,12 @@ spec:
                 - kube-node-lease
                 - kube-public
                 - flux-system
-                - kyverno
-                - policy-reporter
-                - headlamp
-                - tsidp
-                - cert-manager
-                - external-secrets
-                - tailscale
-                - traefik
-                - monitoring
-                - netdata
-                - vector
+          # Platform-managed namespaces carry the platform.io/managed label;
+          # the system namespaces above are not repo-managed.
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  platform.io/managed: "true"
       validate:
         failureAction: Audit
         message: "Liveness and readiness probes are required on every container."

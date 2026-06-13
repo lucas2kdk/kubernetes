@@ -5,4 +5,5 @@ kind: Namespace
 metadata:
   name: tsidp
   labels:
+    platform.io/managed: "true"
     pod-security.kubernetes.io/enforce: privileged

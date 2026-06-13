@@ -10,20 +10,17 @@ spec:
       # privileges, so they are exempt from tenant isolation.
       exclude:
         any:
+          # Platform-managed namespaces carry the platform.io/managed label
+          # (set on each platform/base/*/namespace.yaml). flux-system is
+          # bootstrapped by Flux itself and has no repo-managed namespace
+          # manifest, so it stays an explicit entry.
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  platform.io/managed: "true"
           - resources:
               namespaces:
                 - flux-system
-                - kyverno
-                - policy-reporter
-                - headlamp
-                - tsidp
-                - cert-manager
-                - external-secrets
-                - tailscale
-                - traefik
-                - monitoring
-                - netdata
-                - vector
       match:
         any:
           - resources:
@@ -38,20 +35,17 @@ spec:
     - name: kustomizationSourceRefNamespace
       exclude:
         any:
+          # Platform-managed namespaces carry the platform.io/managed label
+          # (set on each platform/base/*/namespace.yaml). flux-system is
+          # bootstrapped by Flux itself and has no repo-managed namespace
+          # manifest, so it stays an explicit entry.
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  platform.io/managed: "true"
           - resources:
               namespaces:
                 - flux-system
-                - kyverno
-                - policy-reporter
-                - headlamp
-                - tsidp
-                - cert-manager
-                - external-secrets
-                - tailscale
-                - traefik
-                - monitoring
-                - netdata
-                - vector
       match:
         any:
           - resources:
@@ -73,20 +67,17 @@ spec:
     - name: helmReleaseSourceRefNamespace
       exclude:
         any:
+          # Platform-managed namespaces carry the platform.io/managed label
+          # (set on each platform/base/*/namespace.yaml). flux-system is
+          # bootstrapped by Flux itself and has no repo-managed namespace
+          # manifest, so it stays an explicit entry.
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  platform.io/managed: "true"
           - resources:
               namespaces:
                 - flux-system
-                - kyverno
-                - policy-reporter
-                - headlamp
-                - tsidp
-                - cert-manager
-                - external-secrets
-                - tailscale
-                - traefik
-                - monitoring
-                - netdata
-                - vector
       match:
         any:
           - resources:

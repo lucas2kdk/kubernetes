@@ -6,4 +6,5 @@ kind: Namespace
 metadata:
   name: netdata
   labels:
+    platform.io/managed: "true"
     pod-security.kubernetes.io/enforce: privileged

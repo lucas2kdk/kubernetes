@@ -25,17 +25,13 @@ spec:
                 - kube-node-lease
                 - kube-public
                 - flux-system
-                - kyverno
-                - policy-reporter
-                - headlamp
-                - tsidp
-                - cert-manager
-                - external-secrets
-                - tailscale
-                - traefik
-                - monitoring
-                - netdata
-                - vector
+          # Platform-managed namespaces carry the platform.io/managed label
+          # (set on each platform/base/*/namespace.yaml). The system namespaces
+          # above are not repo-managed, so they stay an explicit list.
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  platform.io/managed: "true"
       validate:
         failureAction: Audit
         message: "An explicit image tag is required."
@@ -57,17 +53,13 @@ spec:
                 - kube-node-lease
                 - kube-public
                 - flux-system
-                - kyverno
-                - policy-reporter
-                - headlamp
-                - tsidp
-                - cert-manager
-                - external-secrets
-                - tailscale
-                - traefik
-                - monitoring
-                - netdata
-                - vector
+          # Platform-managed namespaces carry the platform.io/managed label
+          # (set on each platform/base/*/namespace.yaml). The system namespaces
+          # above are not repo-managed, so they stay an explicit list.
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  platform.io/managed: "true"
       validate:
         failureAction: Audit
         message: "Using the mutable ':latest' image tag is not allowed."
