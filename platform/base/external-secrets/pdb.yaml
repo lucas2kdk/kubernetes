@@ -1,3 +1,5 @@
+# PDB for the ESO controller. Keeps voluntary disruptions (node drains) from
+# taking all replicas at once, but stays drain-safe on a single-node cluster.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:

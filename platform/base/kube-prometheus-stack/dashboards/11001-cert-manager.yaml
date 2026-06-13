@@ -1,3 +1,7 @@
+# cert-manager dashboard (grafana.com gnetId 11001), imported JSON. The
+# grafana_dashboard="1" label is what the Grafana sidecar watches to auto-load
+# it; grafana_folder files it under "Platform". Reads the default Prometheus
+# datasource, fed by cert-manager's ServiceMonitor (enabled in its HelmRelease).
 apiVersion: v1
 kind: ConfigMap
 metadata:

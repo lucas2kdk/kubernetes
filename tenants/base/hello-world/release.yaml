@@ -1,3 +1,6 @@
+# Tenant workload. ingress.host here is the base default; each cluster's overlay
+# patches it (hello-world-prod / hello-world-test) so the tailscale ingress
+# hostnames don't collide across clusters.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -5,7 +8,7 @@ metadata:
   namespace: hello-world
 spec:
   interval: 1h
-  serviceAccountName: hello-world
+  serviceAccountName: hello-world # impersonate the tenant SA -> stays within tenant RBAC
   releaseName: hello-world
   chart:
     spec:

@@ -1,3 +1,7 @@
+# cert-manager base (controller + CRDs). The Let's Encrypt ClusterIssuers and the
+# ESO-synced Cloudflare token are deliberately NOT here — they form the separate
+# cert-manager-issuers component, which dependsOn both this release and
+# external-secrets-stores.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

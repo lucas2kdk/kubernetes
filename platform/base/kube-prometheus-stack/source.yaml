@@ -1,3 +1,6 @@
+# Upstream chart repo for kube-prometheus-stack. Lives in flux-system so the
+# HelmRelease's cross-namespace sourceRef resolves (the flux-multi-tenancy
+# guardrail permits sources in flux-system).
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:

@@ -1,3 +1,6 @@
+# Upstream chart repo for the ESO HelmRelease. Lives in flux-system (shared
+# source namespace); the flux-multi-tenancy guardrail blocks cross-namespace
+# source refs from tenants, so platform sources are centralized here.
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:

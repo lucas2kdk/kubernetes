@@ -1,3 +1,5 @@
+# PDB for the ESO validating webhook (separate deployment from the controller).
+# maxUnavailable: 1 — same drain-safe reasoning as pdb.yaml.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:

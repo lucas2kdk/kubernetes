@@ -1,3 +1,9 @@
+# Shared spec defaults patched onto every fleet Flux Kustomization (via the
+# strategic-merge target in kustomization.yaml). Keeping interval/retryInterval/
+# timeout/sourceRef/prune/wait here means each component file declares only what
+# differs (name, path, dependsOn, postBuild). name: placeholder is never
+# applied — the patch matches by GVK, so the metadata.name is just a required
+# stub for a valid manifest.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:

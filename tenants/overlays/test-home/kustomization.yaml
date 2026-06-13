@@ -1,6 +1,8 @@
+# Per-cluster tenant presence for test-home — which tenant apps run here. The
+# only diff from base is the ingress host (hello-world-test) so the tailscale
+# hostname is unique per cluster.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# Per-cluster tenant presence — which tenant apps run on this cluster.
 resources:
   - ../../base
 patches:

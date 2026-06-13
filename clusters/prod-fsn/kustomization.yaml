@@ -2,8 +2,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - flux-system
-  - cluster-vars.yaml
-  - ../../platform/fleet/fleet-vars.yaml
-  - tenants.yaml
-  - ../../platform/fleet
+  - flux-system # Flux bootstrap (GitRepository + flux-system Kustomization); generated, do not hand-edit
+  - cluster-vars.yaml # cluster_name=prod-fsn, substituted into base ${cluster_name} tokens
+  - ../../platform/fleet/fleet-vars.yaml # fleet-wide ${tailnet}; referenced directly, not part of platform/fleet aggregate
+  - tenants.yaml # per-cluster tenants Kustomization (spec.path can't be substituted, so it lives here not in fleet/)
+  - ../../platform/fleet # the whole reconcile graph (all components + dependsOn), referenced not copied

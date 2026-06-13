@@ -1,3 +1,7 @@
+# platform.io/managed: "true" marks this as a platform namespace — exempts it
+# from the tenant-facing guardrails (Kyverno admission policies via
+# namespaceSelector, Cilium default-deny). See README "Platform namespace
+# convention": the Cilium NotIn lists must also be updated by hand.
 apiVersion: v1
 kind: Namespace
 metadata:

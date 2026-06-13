@@ -1,3 +1,8 @@
+# Kubernetes cluster-monitoring dashboard (grafana.com gnetId 15661), imported
+# JSON. The grafana_dashboard="1" label is what the Grafana sidecar watches to
+# auto-load it; grafana_folder files it under "Kubernetes". Reads the default
+# Prometheus datasource, fed by the stack's built-in kubelet/node-exporter/
+# kube-state-metrics scrapers.
 apiVersion: v1
 kind: ConfigMap
 metadata:
