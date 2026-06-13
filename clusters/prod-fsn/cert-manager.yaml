@@ -10,7 +10,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./platform/overlays/prod-fsn/cert-manager
+  path: ./platform/base/cert-manager
   prune: true
   wait: true
   dependsOn:

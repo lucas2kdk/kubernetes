@@ -12,6 +12,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./platform/overlays/prod-fsn/tsidp
+  path: ./platform/base/tsidp
   prune: true
   wait: true

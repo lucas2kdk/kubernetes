@@ -10,6 +10,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./platform/overlays/prod-fsn/kube-prometheus-stack
+  path: ./platform/base/kube-prometheus-stack
   prune: true
   wait: true

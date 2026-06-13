@@ -12,6 +12,6 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./platform/overlays/prod-fsn/traefik
+  path: ./platform/base/traefik
   prune: true
   wait: true

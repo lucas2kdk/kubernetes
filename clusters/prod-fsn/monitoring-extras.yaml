@@ -10,7 +10,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./platform/overlays/prod-fsn/monitoring-extras
+  path: ./platform/base/monitoring-extras
   prune: true
   wait: true
   dependsOn:
