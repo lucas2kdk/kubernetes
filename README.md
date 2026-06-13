@@ -11,9 +11,7 @@ policies that constrain them. The reconcile graph is defined once for the whole
 fleet in `platform/fleet/`; each cluster is a thin folder — its Flux bootstrap, a
 `cluster-vars.yaml` ConfigMap of per-cluster values, and a `kustomization.yaml`
 listing which fleet components it runs. Adding a new region is bootstrap +
-`cluster-vars.yaml` + a component list, with no copying of the reconcile graph
-(see [`docs/scaling-to-many-clusters.md`](docs/scaling-to-many-clusters.md) for
-the rationale).
+`cluster-vars.yaml` + a component list, with no copying of the reconcile graph.
 
 ## Repository structure
 
@@ -125,9 +123,7 @@ shared component definitions free of environment-specific configuration without
 adding empty pass-through layers, and the reconcile graph in `platform/fleet/`
 free of per-cluster copies. Adding a new cluster is then `flux bootstrap`
 (writes `flux-system/`) + a `cluster-vars.yaml` + a `kustomization.yaml` listing
-the components it runs — the reconcile graph is referenced, never copied. See
-[`docs/scaling-to-many-clusters.md`](docs/scaling-to-many-clusters.md) for the
-full rationale.
+the components it runs — the reconcile graph is referenced, never copied.
 
 ### Platform namespace convention
 

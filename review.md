@@ -73,7 +73,3 @@ All five findings are dispositioned:
 - #4 tsidp pinned to `v0.0.14` + Renovate customManager (RESOLVED)
 - #5 empty tenants scaffold kept — the review's "delete it" was a foot-gun given
   the active `tenants` Flux Kustomization (WON'T FIX)
-
-Follow-on work and open doubts that need a live cluster (version pinning, tsidp
-probes/limits, the `generate-baseline-netpol` selector conversion) are tracked in
-[`notes/overnight-improvements.md`](notes/overnight-improvements.md).
