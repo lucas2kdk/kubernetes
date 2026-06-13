@@ -1,0 +1,126 @@
+# Platform alert rules. Prometheus discovers this CR cluster-wide because
+# release.yaml sets ruleSelectorNilUsesHelmValues: false, so no chart label is
+# needed. Every rule carries a severity label (warning|critical) that the
+# Alertmanager routes in release.yaml match on to pick the Discord channel.
+#
+# Metric provenance:
+#   node_*            kube-prometheus-stack's bundled node-exporter
+#   kube_pod_*        kube-state-metrics (bundled)
+#   gotk_*            Flux controllers (flux-podmonitor.yaml)
+#   longhorn_*        Longhorn (longhorn-servicemonitor.yaml)
+#   kyverno_*         Kyverno (scraped via its ServiceMonitor)
+#   certmanager_*     cert-manager (scraped via its ServiceMonitor)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: platform-alerts
+  namespace: monitoring
+spec:
+  groups:
+    - name: nodes
+      rules:
+        - alert: NodeFilesystemSpaceLow
+          expr: |
+            node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.lxcfs|squashfs|overlay"} * 100
+              / node_filesystem_size_bytes{fstype!~"tmpfs|fuse.lxcfs|squashfs|overlay"} < 15
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Low disk space on {{ $labels.instance }}"
+            description: "{{ $labels.mountpoint }} on {{ $labels.instance }} is at {{ $value | printf \"%.1f\" }}% free."
+        - alert: NodeFilesystemSpaceCritical
+          expr: |
+            node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.lxcfs|squashfs|overlay"} * 100
+              / node_filesystem_size_bytes{fstype!~"tmpfs|fuse.lxcfs|squashfs|overlay"} < 5
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Critically low disk space on {{ $labels.instance }}"
+            description: "{{ $labels.mountpoint }} on {{ $labels.instance }} is at {{ $value | printf \"%.1f\" }}% free."
+        - alert: NodeMemoryHigh
+          expr: |
+            (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100 > 90
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory pressure on {{ $labels.instance }}"
+            description: "{{ $labels.instance }} memory used is {{ $value | printf \"%.1f\" }}% of total."
+
+    - name: workloads
+      rules:
+        - alert: PodCrashLooping
+          expr: |
+            max by (namespace, pod, container) (
+              kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"}
+            ) == 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} crash-looping"
+            description: "Container {{ $labels.container }} has been in CrashLoopBackOff for >10m."
+
+    - name: flux
+      rules:
+        # Flux relabels the controller pod's namespace onto `namespace`, so the
+        # metric's own namespace label is exposed as `exported_namespace`.
+        - alert: FluxReconcileFailure
+          expr: |
+            max by (exported_namespace, name, kind) (
+              gotk_reconcile_condition{type="Ready", status="False"}
+            ) == 1
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Flux {{ $labels.kind }} {{ $labels.exported_namespace }}/{{ $labels.name }} not ready"
+            description: "{{ $labels.kind }} {{ $labels.name }} has been failing to reconcile for >15m."
+
+    - name: longhorn
+      rules:
+        # longhorn_volume_robustness: 0=unknown 1=healthy 2=degraded 3=faulted.
+        - alert: LonghornVolumeDegraded
+          expr: longhorn_volume_robustness == 2
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Longhorn volume {{ $labels.volume }} degraded"
+            description: "Volume {{ $labels.volume }} has been degraded (replica missing) for >10m."
+        - alert: LonghornVolumeFaulted
+          expr: longhorn_volume_robustness == 3
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Longhorn volume {{ $labels.volume }} faulted"
+            description: "Volume {{ $labels.volume }} is faulted — data is offline."
+
+    - name: kyverno
+      rules:
+        # Label names track the Kyverno version; rule_result is the pass/fail/
+        # warn/error/skip outcome and policy_validation_mode is audit|enforce.
+        - alert: KyvernoEnforceViolations
+          expr: |
+            sum(rate(kyverno_policy_results_total{policy_validation_mode="enforce", rule_result="fail"}[10m])) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Kyverno enforce-mode policies are blocking resources"
+            description: "Enforce-mode policy failures observed over the last 10m (admission requests being denied)."
+
+    - name: certificates
+      rules:
+        - alert: CertificateExpiringSoon
+          expr: |
+            (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400 < 14
+          for: 1h
+          labels:
+            severity: warning
+          annotations:
+            summary: "Certificate {{ $labels.namespace }}/{{ $labels.name }} expiring soon"
+            description: "Certificate {{ $labels.name }} expires in {{ $value | printf \"%.1f\" }} days."
