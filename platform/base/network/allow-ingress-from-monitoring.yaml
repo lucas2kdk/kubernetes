@@ -1,0 +1,38 @@
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: allow-ingress-from-monitoring
+spec:
+  description: >-
+    Allow ingress to workload namespaces from the Prometheus stack in the
+    monitoring namespace so scrape jobs reach their targets. Without this the
+    default-deny policy blocks all monitoring traffic to workload pods even
+    though monitoring itself is excluded from default-deny (it's a platform
+    namespace). Mirrors the endpoint selector and namespace exclusion list of
+    allow-ingress-from-traefik so both policies apply to the same set of pods.
+  endpointSelector:
+    matchExpressions:
+      - key: k8s:io.kubernetes.pod.namespace
+        operator: NotIn
+        values:
+          - kube-system
+          - kube-node-lease
+          - kube-public
+          - flux-system
+          - kyverno
+          - policy-reporter
+          - cert-manager
+          - external-secrets
+          - tailscale
+          - traefik
+          - monitoring
+          - netdata
+          - vector
+          - headlamp
+          - tsidp
+          - trivy-system
+          - longhorn-system
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring

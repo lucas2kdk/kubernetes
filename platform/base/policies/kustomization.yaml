@@ -5,6 +5,7 @@ resources:
   # Tier 1 baseline policies — rolled out as Audit; promote to Enforce
   # per-environment via overlays once policy reports are clean.
   - pod-security-baseline.yaml
+  - pod-security-restricted.yaml
   - disallow-default-namespace.yaml
   - require-requests.yaml
   - disallow-latest-tag.yaml
