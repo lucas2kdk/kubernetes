@@ -4,14 +4,6 @@ metadata:
   name: tsidp
   namespace: flux-system
 spec:
+  path: ./platform/base/tsidp
   dependsOn:
     - name: external-secrets-stores
-  interval: 1h
-  retryInterval: 2m
-  timeout: 5m
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-  path: ./platform/base/tsidp
-  prune: true
-  wait: true

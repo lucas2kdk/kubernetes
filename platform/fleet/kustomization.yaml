@@ -17,3 +17,9 @@ resources:
   - traefik.yaml
   - trivy-operator.yaml
   - tsidp.yaml
+patches:
+  - path: _defaults.yaml
+    target:
+      group: kustomize.toolkit.fluxcd.io
+      version: v1
+      kind: Kustomization

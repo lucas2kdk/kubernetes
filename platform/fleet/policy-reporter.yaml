@@ -4,14 +4,6 @@ metadata:
   name: policy-reporter
   namespace: flux-system
 spec:
+  path: ./platform/base/policy-reporter
   dependsOn:
     - name: kyverno
-  interval: 1h
-  retryInterval: 2m
-  timeout: 5m
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-  path: ./platform/base/policy-reporter
-  prune: true
-  wait: true

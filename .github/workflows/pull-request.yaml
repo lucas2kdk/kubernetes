@@ -1,11 +1,12 @@
 name: PR
 
-# Gate every pull request to main. Four independent checks, all runnable
+# Gate every pull request to main. Five independent checks, all runnable
 # locally via `just check`:
-#   validate — build each kustomization the way Flux does + kubeconform schemas
-#   policy   — evaluate the Kyverno ClusterPolicies against the rendered manifests
-#   secrets  — scan the tree for committed secrets (gitleaks)
-#   lint     — lint these workflow files (actionlint)
+#   validate   — build each kustomization the way Flux does + kubeconform schemas
+#   policy     — evaluate the Kyverno ClusterPolicies against the rendered manifests
+#   namespaces — guard the four platform-namespace exclusion lists are in lockstep
+#   secrets    — scan the tree for committed secrets (gitleaks)
+#   lint       — lint these workflow files (actionlint)
 on:
   pull_request:
     branches: ["main"]
@@ -85,6 +86,18 @@ jobs:
 
       - name: Scan for secrets
         run: just secrets
+
+  namespaces:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install just
+        uses: extractions/setup-just@v3
+
+      - name: Check namespace exclusion lists
+        run: just namespaces
 
   lint:
     runs-on: ubuntu-latest

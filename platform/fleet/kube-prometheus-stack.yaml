@@ -4,15 +4,7 @@ metadata:
   name: kube-prometheus-stack
   namespace: flux-system
 spec:
-  interval: 1h
-  retryInterval: 2m
-  timeout: 5m
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
   path: ./platform/base/kube-prometheus-stack
-  prune: true
-  wait: true
   postBuild:
     substituteFrom:
       # ${tailnet} -> Grafana root_url + OIDC URLs ({grafana,idp}.<tailnet>.ts.net).

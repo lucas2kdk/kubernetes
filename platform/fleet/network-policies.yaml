@@ -4,11 +4,4 @@ metadata:
   name: network-policies
   namespace: flux-system
 spec:
-  interval: 1h
-  retryInterval: 2m
-  timeout: 5m
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
   path: ./platform/base/network
-  prune: true

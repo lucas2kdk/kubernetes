@@ -83,25 +83,27 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 # Collect the sorted, unique namespace set for every file, keyed by file path.
+slug() { printf '%s' "${1//\//-}"; }
+
 files=("${cilium_files[@]}" "$kyverno_file")
 for f in "${cilium_files[@]}"; do
-  extract_cilium "$f" | sort -u > "$tmp/$(basename "$f").set"
+  extract_cilium "$f" | sort -u > "$tmp/$(slug "$f").set"
 done
-extract_kyverno "$kyverno_file" | sort -u > "$tmp/$(basename "$kyverno_file").set"
+extract_kyverno "$kyverno_file" | sort -u > "$tmp/$(slug "$kyverno_file").set"
 
 # Reference set = the first file; everything is compared against it.
 ref="${files[0]}"
-ref_set="$tmp/$(basename "$ref").set"
+ref_set="$tmp/$(slug "$ref").set"
 
 echo "== checking platform-namespace exclusion lists are in lockstep =="
 for f in "${files[@]}"; do
-  printf '→ %s (%d namespaces)\n' "$f" "$(wc -l < "$tmp/$(basename "$f").set")"
+  printf '→ %s (%d namespaces)\n' "$f" "$(wc -l < "$tmp/$(slug "$f").set")"
 done
 
 drift=0
 for f in "${files[@]}"; do
   [ "$f" = "$ref" ] && continue
-  cur_set="$tmp/$(basename "$f").set"
+  cur_set="$tmp/$(slug "$f").set"
   if ! diff -q "$ref_set" "$cur_set" >/dev/null; then
     drift=1
     echo

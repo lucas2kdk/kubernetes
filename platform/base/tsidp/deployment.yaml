@@ -32,7 +32,7 @@ spec:
       # app (uid/gid 1001), so hand it the state dir before start.
       initContainers:
         - name: chown-state
-          image: ghcr.io/tailscale/tsidp:v0.0.14
+          image: busybox:1.37.0
           command: ["/bin/sh", "-c", "chown -R 1001:1001 /data"]
           securityContext:
             runAsUser: 0

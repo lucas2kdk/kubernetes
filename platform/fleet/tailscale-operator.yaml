@@ -4,17 +4,9 @@ metadata:
   name: tailscale-operator
   namespace: flux-system
 spec:
+  path: ./platform/base/tailscale-operator
   dependsOn:
     - name: external-secrets-stores
-  interval: 1h
-  retryInterval: 2m
-  timeout: 5m
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-  path: ./platform/base/tailscale-operator
-  prune: true
-  wait: true
   postBuild:
     substituteFrom:
       - kind: ConfigMap

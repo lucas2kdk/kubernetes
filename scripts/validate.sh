@@ -52,12 +52,11 @@ while read -r dir; do
 done < <(find . -name kustomization.yaml -not -path './.git/*' -printf '%h\n' | sort -u)
 
 echo "== validating cluster Flux Kustomization objects =="
-# The shared fleet Flux Kustomization CRs now live in platform/fleet/*.yaml, and
-# each cluster keeps a few per-cluster CRs under clusters/<name>/ (tenants,
-# the AppRole external-secrets-stores override, cluster-vars). None of these are
-# API objects pulled into an aggregating build as resources we'd want re-checked
-# — the fleet kustomization.yaml only references them — so check the raw CRs
-# directly. kustomization.yaml files (kind: Kustomization, kustomize.config.k8s.io)
+# Each cluster keeps a few per-cluster CRs under clusters/<name>/ (tenants,
+# the AppRole external-secrets-stores override, cluster-vars). The fleet
+# Flux Kustomization CRs (platform/fleet/*.yaml) are already covered by the
+# kustomize build loop above (platform/fleet/kustomization.yaml emits them).
+# kustomization.yaml files (kind: Kustomization, kustomize.config.k8s.io)
 # are build configs, not API objects, so they're excluded from this pass.
 while read -r f; do
   cluster_targets=$((cluster_targets + 1))
@@ -67,8 +66,7 @@ while read -r f; do
   else
     failed+=("$f")
   fi
-done < <( { find ./clusters -maxdepth 2 -name '*.yaml' -not -path '*/flux-system/*' -not -name kustomization.yaml
-           find ./platform/fleet -maxdepth 1 -name '*.yaml' -not -name kustomization.yaml; } | sort)
+done < <(find ./clusters -maxdepth 2 -name '*.yaml' -not -path '*/flux-system/*' -not -name kustomization.yaml | sort)
 
 # Fail safe: a gate that validates nothing must not report success. If either
 # discovery turns up zero targets the tree moved or we're in the wrong CWD —

@@ -4,13 +4,6 @@ metadata:
   name: kyverno-policies
   namespace: flux-system
 spec:
+  path: ./platform/base/policies
   dependsOn:
     - name: kyverno
-  interval: 1h
-  retryInterval: 2m
-  timeout: 5m
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-  path: ./platform/base/policies
-  prune: true

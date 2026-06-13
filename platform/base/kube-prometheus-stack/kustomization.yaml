@@ -11,3 +11,17 @@ resources:
   - dashboards/11001-cert-manager.yaml
   - dashboards/15987-kyverno.yaml
   - dashboards/16888-longhorn.yaml
+
+# The committed Grafana dashboard JSON carries literal ${...} tokens (Grafana
+# template variables) that Flux's post-build envsubst can't parse — it fails the
+# whole Kustomization. Exempt the dashboard ConfigMaps from substitution so only
+# the HelmRelease's ${tailnet} resolves. (substituteFrom is set on the fleet
+# Kustomization, platform/fleet/kube-prometheus-stack.yaml.)
+patches:
+  - target:
+      kind: ConfigMap
+      labelSelector: grafana_dashboard=1
+    patch: |
+      - op: add
+        path: /metadata/annotations/kustomize.toolkit.fluxcd.io~1substitute
+        value: disabled

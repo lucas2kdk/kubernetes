@@ -4,14 +4,6 @@ metadata:
   name: traefik
   namespace: flux-system
 spec:
+  path: ./platform/base/traefik
   dependsOn:
     - name: cert-manager
-  interval: 1h
-  retryInterval: 2m
-  timeout: 5m
-  sourceRef:
-    kind: GitRepository
-    name: flux-system
-  path: ./platform/base/traefik
-  prune: true
-  wait: true
