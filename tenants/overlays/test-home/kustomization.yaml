@@ -3,3 +3,13 @@ kind: Kustomization
 # Per-cluster tenant presence — which tenant apps run on this cluster.
 resources:
   - ../../base
+patches:
+  - target:
+      group: helm.toolkit.fluxcd.io
+      version: v2
+      kind: HelmRelease
+      name: hello-world
+    patch: |-
+      - op: replace
+        path: /spec/values/ingress/host
+        value: hello-world-test
