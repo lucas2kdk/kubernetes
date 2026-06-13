@@ -33,9 +33,8 @@ spec:
       # console ACL (see README "Tailscale access" for the canonical policy).
       defaultTags:
         - tag:k8s-operator
-      # Each cluster's API proxy needs a distinct tailnet name; patched in
-      # platform/overlays/<cluster>/tailscale-operator/.
-      hostname: k8s-api-REPLACE-IN-OVERLAY
+      # Per-cluster API hostname, substituted by Flux from the cluster-vars ConfigMap.
+      hostname: k8s-api-${cluster_name}
     # OAuth client credentials come from Vault via External Secrets: the
     # ExternalSecret (external-secret.yaml) syncs secret/platform/tailscale into the
     # `operator-oauth` Secret. oauth.clientId/clientSecret are intentionally left unset

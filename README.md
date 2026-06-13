@@ -5,18 +5,26 @@ Flux multi-tenancy GitOps repository, based on the
 example.
 
 It manages the cluster fleet — currently **prod-fsn** (Hetzner Falkenstein,
-bare-metal Talos) — from a single Git repository, with a platform admin defining
-the tenants and the policies that constrain them. The layout stays per-cluster
-so new regions join as new `clusters/<name>` + `overlays/<name>` entries.
+bare-metal Talos) and **test-home** (a home-LAN test cluster running a subset) —
+from a single Git repository, with a platform admin defining the tenants and the
+policies that constrain them. The reconcile graph is defined once for the whole
+fleet in `platform/fleet/`; each cluster is a thin folder — its Flux bootstrap, a
+`cluster-vars.yaml` ConfigMap of per-cluster values, and a `kustomization.yaml`
+listing which fleet components it runs. Adding a new region is bootstrap +
+`cluster-vars.yaml` + a component list, with no copying of the reconcile graph
+(see [`docs/scaling-to-many-clusters.md`](docs/scaling-to-many-clusters.md) for
+the rationale).
 
 ## Repository structure
 
 ```
-├── clusters         # Flux entry point per cluster
-│   └── prod-fsn     #   one Flux Kustomization per platform component + tenants
+├── clusters         # Flux entry point per cluster (thin: which components it runs)
+│   ├── prod-fsn     #   flux-system + cluster-vars.yaml + kustomization.yaml + tenants.yaml
+│   └── test-home    #   flux-system + cluster-vars.yaml + kustomization.yaml (subset)
 ├── platform         # All in-cluster platform components
+│   ├── fleet        #   the per-component Flux Kustomizations + dependsOn graph (defined ONCE)
 │   ├── base         #   reusable component bases (HelmRelease + source + ns)
-│   └── overlays     #   per-cluster presence/patches (prod-fsn)
+│   └── overlays     #   per-cluster structural diffs only (test-home AppRole auth)
 ├── tenants          # Per-tenant namespaces, RBAC and workloads
 │   ├── base
 │   └── overlays     #   per-cluster tenant presence (prod-fsn)
@@ -28,20 +36,43 @@ so new regions join as new `clusters/<name>` + `overlays/<name>` entries.
 
 This follows the fleet-repo layout from the platform spec: Terraform owns
 infrastructure, **Flux owns everything inside Kubernetes**, organized as
-`platform/{base,overlays}` + `tenants/{base,overlays}`.
+`platform/{fleet,base,overlays}` + `tenants/{base,overlays}`.
 
-- **clusters/** — the per-cluster reconciliation entry points. Each cluster's
-  folder holds the Flux `Kustomization` objects, one per platform component
-  plus `tenants`, pointing at the component's `base` (or a per-cluster overlay
-  where one is needed for patches). `flux-system/` is the bootstrap (do not
-  hand-edit).
-- **platform/** — every component Flux installs. `base/<component>` is a
-  Kustomize base (`namespace.yaml` + `source.yaml` `HelmRepository` +
-  `release.yaml` `HelmRelease`) that the cluster `Kustomization` reconciles
-  directly. A per-cluster overlay (`overlays/<cluster>/<component>`) is added
-  only where a value must be patched for that cluster — today just
-  `tailscale-operator` (per-cluster API hostname) and `external-secrets-stores`
-  (per-cluster Vault auth mount); everything else points straight at `base`.
+- **clusters/** — the per-cluster reconciliation entry points, now thin. Each
+  cluster's folder holds its `flux-system/` bootstrap (do not hand-edit), a
+  `cluster-vars.yaml` ConfigMap of per-cluster substitution values (currently
+  just `cluster_name`), a `kustomization.yaml` that lists which fleet components
+  this cluster runs, and any genuinely per-cluster Flux `Kustomization` CRs
+  (`tenants.yaml`, and `test-home`'s structural `external-secrets-stores.yaml`).
+  `prod-fsn` runs the full fleet — its `kustomization.yaml` references
+  `../../platform/fleet` (the whole set) alongside `flux-system`,
+  `cluster-vars.yaml` and `tenants.yaml`. `test-home` runs a subset — it lists
+  individual fleet files (`../../platform/fleet/external-secrets.yaml`,
+  `../../platform/fleet/tailscale-operator.yaml`) plus its own
+  `external-secrets-stores.yaml` override.
+- **platform/** — every component Flux installs.
+  - `fleet/` holds the per-component Flux `Kustomization` CRs (one per
+    component), defined **once** for the whole fleet, and `fleet/kustomization.yaml`
+    aggregates all 15 (the "run everything" set). The reconcile-order `dependsOn`
+    graph lives here, once, instead of being copied into every cluster folder.
+  - `base/<component>` is a Kustomize base (`namespace.yaml` + `source.yaml`
+    `HelmRepository` + `release.yaml` `HelmRelease`) that a fleet `Kustomization`
+    reconciles directly. Per-cluster *scalar values* are not patched via overlays
+    anymore: the base manifests carry `${cluster_name}` tokens (e.g.
+    `platform/base/tailscale-operator/release.yaml` `hostname: k8s-api-${cluster_name}`,
+    `platform/base/external-secrets-stores/cluster-secret-store.yaml`
+    `mountPath: kubernetes/${cluster_name}`), and the matching fleet
+    `Kustomization`s carry `postBuild.substituteFrom: [{kind: ConfigMap, name:
+    cluster-vars}]` so Flux substitutes the token in-cluster from each cluster's
+    `cluster-vars` ConfigMap.
+  - `overlays/<cluster>/<component>` is reserved for *structural* differences,
+    not value swaps. The only remaining overlay is
+    `overlays/test-home/external-secrets-stores`: test-home's home-LAN apiserver
+    can't serve Vault's TokenReview callback, so it removes the `kubernetes` auth
+    block and adds an `appRole` block. Because a Flux `Kustomization`'s
+    `spec.path` can't be substituted, test-home keeps its own
+    `clusters/test-home/external-secrets-stores.yaml` CR pointing at that overlay.
+
   Components:
   - **Live today:** `kyverno` (admission controller), `policies` (the
     `ClusterPolicy` set — starting with the flux-multi-tenancy guardrail that
@@ -68,9 +99,10 @@ infrastructure, **Flux owns everything inside Kubernetes**, organized as
     sidecar, fed by per-component ServiceMonitor/PodMonitors.
   - **Scaffolded stubs (bases present, not reconciled — see `# TODO` markers):**
     `netdata`, `vector`. The component bases exist under `platform/base/` but
-    have no cluster `Kustomization`, so Flux does not install them yet. Re-add a
-    `clusters/prod-fsn/<name>.yaml` and fill in the cluster-specific config
-    (Humio sink) to enable them.
+    have no fleet `Kustomization`, so Flux does not install them yet. To enable
+    one, add `platform/fleet/<name>.yaml` (and list it in
+    `platform/fleet/kustomization.yaml`), fill in the cluster-specific config
+    (Humio sink), and make sure the cluster's `kustomization.yaml` includes it.
 
   The `network` default-deny policy denies all ingress/egress for **workload**
   namespaces while excluding the platform namespaces (`kube-system`,
@@ -81,14 +113,21 @@ infrastructure, **Flux owns everything inside Kubernetes**, organized as
 - **tenants/** — tenant definitions (namespaces, service accounts, RBAC and the
   Flux sources/Kustomizations each tenant manages). Empty until the first tenant
   is onboarded; `tenants` reconciles per cluster from `overlays/<cluster>`.
+  Because its `spec.path` points at `tenants/overlays/<cluster>` and a Flux
+  `Kustomization`'s `path` can't be substituted, `tenants` stays a per-cluster
+  Flux `Kustomization` (`clusters/<name>/tenants.yaml`): `prod-fsn` has one,
+  `test-home` has none yet.
 
-`base` directories are the shared component definitions clusters reconcile
-directly. A per-cluster overlay (`overlays/<cluster>/<component>`) is introduced
-only when that cluster must patch a value, keeping environment-specific
-configuration out of the shared definitions without adding empty pass-through
-layers. When a second cluster arrives (or a component needs a per-cluster
-patch), re-add an overlay for just that component and repoint its cluster
-`Kustomization` at it.
+The rule for where per-cluster variation lives is: **per-cluster *values* go in
+`cluster-vars` and are applied via `${var}` substitution; per-cluster *structure*
+gets an overlay plus a per-cluster Flux `Kustomization` CR.** This keeps the
+shared component definitions free of environment-specific configuration without
+adding empty pass-through layers, and the reconcile graph in `platform/fleet/`
+free of per-cluster copies. Adding a new cluster is then `flux bootstrap`
+(writes `flux-system/`) + a `cluster-vars.yaml` + a `kustomization.yaml` listing
+the components it runs — the reconcile graph is referenced, never copied. See
+[`docs/scaling-to-many-clusters.md`](docs/scaling-to-many-clusters.md) for the
+full rationale.
 
 ### Platform namespace convention
 
@@ -115,17 +154,31 @@ guardrails in **three** places — only the first is automatic:
    `kube-public`, `flux-system`) have no `namespace.yaml` here to label, so they
    stay explicit in the Kyverno static lists too.
 
+These four lists (the three Cilium `NotIn` lists +
+`generate-baseline-netpol.yaml`'s `names:`) still have to be edited by hand in
+lockstep — they couldn't be safely deduplicated into one source: `kubeconform`
+validates the Cilium CRD, so Flux-substituting a YAML *list* would break
+validation (the committed manifest would hold a `${var}` string where the schema
+demands an array). What *has* changed is that a drift guard now enforces the
+lockstep: `scripts/check-namespace-lists.sh` (run via `just namespaces`, part of
+`just check`) **fails the build if the four lists ever diverge**, printing
+exactly which namespace is missing from which file. You can no longer merge a PR
+where the lists disagree.
+
 `longhorn-system` (Terraform-managed storage) is a special case: it must appear
 in **all three** Cilium lists *and* `generate-baseline-netpol.yaml` in lockstep
 — it has no baseline CNP and relies on being outside every policy to keep CSI
 ↔ kube-apiserver traffic flowing (see the 2026-06-12 outage note in
-`generate-baseline-netpol.yaml`).
+`generate-baseline-netpol.yaml`; that outage is exactly the drift the guard now
+prevents).
 
 ### Reconcile order
 
-Per cluster, Flux applies one `Kustomization` per component (auto-discovered
-from the loose YAML files under `clusters/<env>/`). `dependsOn` enforces
-ordering where it matters. The roots have no dependencies —
+The reconcile graph is defined once for the whole fleet, in `platform/fleet/`:
+one Flux `Kustomization` per component, with `dependsOn` enforcing ordering where
+it matters. A cluster runs the subset its `kustomization.yaml` selects (the whole
+`platform/fleet` set, or individual fleet files). The roots have no dependencies
+—
 `external-secrets`, `kube-prometheus-stack`, `network-policies` and `tenants`
 — and everything else chains off them:
 
@@ -138,7 +191,7 @@ ordering where it matters. The roots have no dependencies —
 - **Kyverno before its policies/reporter.** `kyverno-policies` (the
   `ClusterPolicy` set) and `policy-reporter` both `dependsOn: kyverno`.
 - **Secret stores before secret consumers.** `external-secrets-stores` (the
-  Vault `ClusterSecretStore`, a per-cluster overlay) `dependsOn:
+  Vault `ClusterSecretStore`) `dependsOn:
   external-secrets`; then everything that reads a Vault-synced secret waits on
   the store: `headlamp`, `tsidp`, `tailscale-operator` and
   `cert-manager-issuers` (`dependsOn: external-secrets-stores`).
@@ -150,9 +203,11 @@ ordering where it matters. The roots have no dependencies —
   needs the Cilium CRDs, which Terraform installs out-of-band.
 
 `netdata` and `vector` have component bases under `platform/base/` but **no
-cluster `Kustomization`** today, so Flux does not reconcile them. Re-add a
-`clusters/prod-fsn/<name>.yaml` to enable one (the Flux Kustomization template
-is in this repo's git history).
+fleet `Kustomization`** today, so Flux does not reconcile them. To enable one,
+add `platform/fleet/<name>.yaml` (and list it in
+`platform/fleet/kustomization.yaml`), then make sure the cluster's
+`kustomization.yaml` includes it (the Flux Kustomization template is in this
+repo's git history).
 
 Reach the Policy Reporter UI with a port-forward (no Ingress configured yet):
 
@@ -178,8 +233,9 @@ carries your real login. No per-user kubeconfig secrets, no public API
 endpoints.
 
 - Each cluster's operator device is the API endpoint:
-  `k8s-api-prod-fsn` (hostname patched per cluster in
-  `platform/overlays/<cluster>/tailscale-operator/`).
+  `k8s-api-prod-fsn` (hostname is `k8s-api-${cluster_name}` in
+  `platform/base/tailscale-operator/release.yaml`, substituted per cluster from
+  the `cluster-vars` ConfigMap).
 - The operator's OAuth client credentials live in Vault at
   `secret/platform/tailscale` (keys `client_id`, `client_secret`), synced by
   ESO into the `operator-oauth` Secret. The OAuth client needs the
@@ -233,18 +289,21 @@ kubectl auth can-i get secrets -A        # no
 ## Validating changes
 
 Every pull request to `main` is gated by `.github/workflows/pull-request.yaml`,
-which runs three independent checks. All of them are runnable locally through
+which runs several independent checks. All of them are runnable locally through
 the [`justfile`](justfile) (`just <recipe>`):
 
-| Recipe          | What it does                                                             | Tooling                  |
-|-----------------|--------------------------------------------------------------------------|--------------------------|
-| `just validate` | Builds every `kustomization.yaml` the way Flux does (`--load-restrictor LoadRestrictionsNone`) and schema-checks the output, plus the cluster Flux Kustomization objects. | `kustomize` (or `kubectl`), `kubeconform` |
-| `just policy`   | Renders the manifests each cluster reconciles, evaluates the Kyverno `ClusterPolicies` against them, then runs the policy unit tests in `tests/policy/` (see below). | `kustomize`, `kyverno`, `python3` |
-| `just secrets`  | Scans the working tree for committed secrets.                            | `gitleaks`               |
+| Recipe            | What it does                                                             | Tooling                  |
+|-------------------|--------------------------------------------------------------------------|--------------------------|
+| `just validate`   | Builds every `kustomization.yaml` the way Flux does (`--load-restrictor LoadRestrictionsNone`) and schema-checks the output, plus the cluster Flux Kustomization objects. | `kustomize` (or `kubectl`), `kubeconform` |
+| `just policy`     | Renders the manifests each cluster reconciles, evaluates the Kyverno `ClusterPolicies` against them, then runs the policy unit tests in `tests/policy/` (see below). | `kustomize`, `kyverno`, `python3` |
+| `just namespaces` | Checks the four platform-namespace exclusion lists are set-identical (the drift guard — see [Platform namespace convention](#platform-namespace-convention)). | `yq` or `python3`        |
+| `just secrets`    | Scans the working tree for committed secrets.                            | `gitleaks`               |
+| `just lint`       | Lints the GitHub Actions workflows.                                      | `actionlint`             |
 
-`just check` runs all three (what CI runs). `just` with no recipe lists them.
+`just check` runs all of them — `validate`, `policy`, `namespaces`, `secrets`,
+`lint` (what CI runs). `just` with no recipe lists them.
 
-A fifth recipe, `just scan`, renders the charts + manifests the cluster actually
+Another recipe, `just scan`, renders the charts + manifests the cluster actually
 reconciles (not scaffolded stubs) and scans the referenced container images for
 CVEs with Trivy (`--ignore-unfixed`, so it flags only criticals a version bump
 can resolve). It is **not** a PR gate — CVEs are disclosed independently of

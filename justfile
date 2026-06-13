@@ -3,7 +3,7 @@ default:
     @just --list
 
 # Run every PR check (what CI runs on a pull request)
-check: validate policy secrets lint
+check: validate policy namespaces secrets lint
 
 # Lint the GitHub Actions workflows
 lint:
@@ -16,6 +16,10 @@ validate:
 # Evaluate the Kyverno ClusterPolicies against rendered manifests + unit tests
 policy:
     ./scripts/policy-check.sh
+
+# Check the four platform-namespace exclusion lists are in lockstep
+namespaces:
+    ./scripts/check-namespace-lists.sh
 
 # Scan the working tree for committed secrets
 secrets:

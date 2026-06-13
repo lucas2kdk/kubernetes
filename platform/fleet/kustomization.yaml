@@ -1,0 +1,19 @@
+# The fleet: every platform component's Flux Kustomization, defined once. A cluster opts in by referencing this whole directory or individual files. Per-cluster values come from each cluster's cluster-vars ConfigMap via postBuild substitution.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cert-manager-issuers.yaml
+  - cert-manager.yaml
+  - external-secrets-stores.yaml
+  - external-secrets.yaml
+  - headlamp.yaml
+  - kube-prometheus-stack.yaml
+  - kyverno-policies.yaml
+  - kyverno.yaml
+  - monitoring-extras.yaml
+  - network-policies.yaml
+  - policy-reporter.yaml
+  - tailscale-operator.yaml
+  - traefik.yaml
+  - trivy-operator.yaml
+  - tsidp.yaml

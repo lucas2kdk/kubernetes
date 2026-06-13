@@ -12,6 +12,10 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./platform/overlays/prod-fsn/tailscale-operator
+  path: ./platform/base/tailscale-operator
   prune: true
   wait: true
+  postBuild:
+    substituteFrom:
+      - kind: ConfigMap
+        name: cluster-vars

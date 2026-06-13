@@ -1,0 +1,8 @@
+# prod-fsn runs the full fleet. Components are defined once in platform/fleet/; this lists what prod-fsn runs plus its per-cluster files (cluster-vars, tenants).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - flux-system
+  - cluster-vars.yaml
+  - tenants.yaml
+  - ../../platform/fleet
