@@ -51,6 +51,17 @@ spec:
         installOptions:
           parallel: true
           maxConcurrent: 2
+    # trivy-operator UI plugin (kubebeam) — not on Artifact Hub, ships as an OCI
+    # image whose layer is just the built plugin bundle. The init container copies
+    # it into the chart-managed plugins-dir emptyDir before the headlamp backend
+    # starts; watchPlugins above then picks it up alongside the sidecar's writes.
+    initContainers:
+      - name: trivy-headlamp-plugin
+        image: ghcr.io/kubebeam/trivy-headlamp-plugin:v0.3.2 # Renovate-managed
+        command: ["/bin/sh", "-c", "cp -r /plugins/* /headlamp/plugins/"]
+        volumeMounts:
+          - name: plugins-dir
+            mountPath: /headlamp/plugins
   valuesFrom:
     - kind: Secret
       name: headlamp-oidc
