@@ -4,7 +4,7 @@ metadata:
   name: tailscale-operator
   namespace: flux-system
 spec:
-  path: ./platform/base/tailscale-operator
+  path: ./base/tailscale-operator
   dependsOn:
     - name: external-secrets-stores
   postBuild:

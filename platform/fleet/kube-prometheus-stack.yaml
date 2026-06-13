@@ -4,7 +4,7 @@ metadata:
   name: kube-prometheus-stack
   namespace: flux-system
 spec:
-  path: ./platform/base/kube-prometheus-stack
+  path: ./base/kube-prometheus-stack
   postBuild:
     substituteFrom:
       # ${tailnet} -> Grafana root_url + OIDC URLs ({grafana,idp}.<tailnet>.ts.net).

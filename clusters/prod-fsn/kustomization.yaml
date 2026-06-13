@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - flux-system
   - cluster-vars.yaml
+  - platform-source.yaml
   - ../../platform/fleet/fleet-vars.yaml
   - tenants.yaml
   - ../../platform/fleet

@@ -4,6 +4,6 @@ metadata:
   name: cert-manager
   namespace: flux-system
 spec:
-  path: ./platform/base/cert-manager
+  path: ./base/cert-manager
   dependsOn:
     - name: kube-prometheus-stack

@@ -1,0 +1,58 @@
+name: Release
+
+# Fires when release-please merges a release PR and creates a platform/vX.Y.Z tag.
+# Renders the platform/ directory, injects the version into platform-meta, and
+# pushes an immutable OCI artifact to ghcr.io/lucas2kdk/platform.
+on:
+  push:
+    tags:
+      - "platform/v*"
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  OCI_REGISTRY: ghcr.io
+  OCI_IMAGE: ghcr.io/lucas2kdk/platform
+  # renovate: datasource=github-releases depName=fluxcd/flux2 extractVersion=^v(?<version>.+)$
+  FLUX_VERSION: "2.8.1"
+
+jobs:
+  push-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#platform/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Install flux CLI
+        run: |
+          curl -sSL "https://github.com/fluxcd/flux2/releases/download/v${FLUX_VERSION}/flux_${FLUX_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz flux
+          sudo mv flux /usr/local/bin/flux
+
+      - name: Inject version into platform-meta ConfigMap
+        run: |
+          sed -i "s/version: \"0\.0\.0\"/version: \"${{ steps.version.outputs.version }}\"/" \
+            platform/base/platform-meta/platform-version.yaml
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | flux registry login ghcr.io --username "${{ github.actor }}" --password-stdin
+
+      - name: Push OCI artifact
+        run: |
+          flux push artifact \
+            "oci://${OCI_IMAGE}:${{ steps.version.outputs.version }}" \
+            --path=./platform \
+            --source="https://github.com/${{ github.repository }}.git" \
+            --revision="${{ github.ref_name }}@sha1:${{ github.sha }}"
+
+      - name: Tag as latest
+        run: |
+          flux tag artifact \
+            "oci://${OCI_IMAGE}:${{ steps.version.outputs.version }}" \
+            --tag=latest

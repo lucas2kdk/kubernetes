@@ -4,6 +4,6 @@ metadata:
   name: trivy-operator
   namespace: flux-system
 spec:
-  path: ./platform/base/trivy-operator
+  path: ./base/trivy-operator
   dependsOn:
     - name: kube-prometheus-stack

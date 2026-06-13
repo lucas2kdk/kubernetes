@@ -4,6 +4,6 @@ metadata:
   name: policy-reporter
   namespace: flux-system
 spec:
-  path: ./platform/base/policy-reporter
+  path: ./base/policy-reporter
   dependsOn:
     - name: kyverno

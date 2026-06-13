@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - flux-system
   - cluster-vars.yaml
+  - platform-source.yaml
   - ../../platform/fleet/capacitor.yaml
   - ../../platform/fleet/external-secrets.yaml
   - ../../platform/fleet/tailscale-operator.yaml

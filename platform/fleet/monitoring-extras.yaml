@@ -4,6 +4,6 @@ metadata:
   name: monitoring-extras
   namespace: flux-system
 spec:
-  path: ./platform/base/monitoring-extras
+  path: ./base/monitoring-extras
   dependsOn:
     - name: kube-prometheus-stack
