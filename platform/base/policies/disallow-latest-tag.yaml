@@ -11,6 +11,10 @@ metadata:
 spec:
   background: true
   rules:
+    # Two complementary rules: require-image-tag rejects an image with NO tag at
+    # all (`*:*` requires a colon-tag); validate-image-tag rejects the mutable
+    # `:latest` tag specifically. A bare `nginx` fails the first but passes the
+    # second; `nginx:latest` passes the first but fails the second.
     - name: require-image-tag
       match:
         any:
@@ -33,6 +37,8 @@ spec:
                 matchLabels:
                   platform.io/managed: "true"
       validate:
+        # Audit only for now (Tier-1 baseline); promote to Enforce per-environment
+        # once policy-reporter shows clean.
         failureAction: Audit
         message: "An explicit image tag is required."
         pattern:

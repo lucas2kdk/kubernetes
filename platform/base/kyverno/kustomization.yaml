@@ -1,3 +1,9 @@
+# Kyverno component base: the admission controller that enforces every
+# ClusterPolicy in platform/base/policies. Reconciled by platform/fleet/kyverno.yaml,
+# which dependsOn kube-prometheus-stack (for the ServiceMonitor CRDs this release
+# emits). kyverno-policies and policy-reporter both dependsOn this component.
+# Order matches install order: namespace (labelled platform.io/managed) → Helm
+# source → release → PDB.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

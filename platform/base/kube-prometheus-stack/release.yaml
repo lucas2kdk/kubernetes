@@ -1,3 +1,9 @@
+# Prometheus + Grafana for the fleet. This release also owns the
+# Prometheus-Operator CRDs (ServiceMonitor/PodMonitor/PrometheusRule), so it is a
+# reconcile root that monitor-shipping components dependsOn — installing a
+# ServiceMonitor before these CRDs exist would fail to apply (see README
+# "Reconcile order"). CRDs use CreateReplace on both install/upgrade so chart
+# bumps pick up CRD schema changes (the operator ships them as chart resources).
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -103,5 +109,10 @@ spec:
         serviceMonitorSelectorNilUsesHelmValues: false
         podMonitorSelectorNilUsesHelmValues: false
         probeSelectorNilUsesHelmValues: false
+        # ruleSelector too: cluster-wide PrometheusRule discovery feeds the repo's
+        # platform alert rules into Prometheus regardless of chart labels.
         ruleSelectorNilUsesHelmValues: false
     # TODO: Alertmanager routing/receivers (PagerDuty/Slack), alert rules from repo.
+    # Alertmanager routing (Discord) + the platform PrometheusRule set are added
+    # on the feat/alertmanager-routing-alerts branch; once merged the rules land
+    # here via the cluster-wide ruleSelector above.

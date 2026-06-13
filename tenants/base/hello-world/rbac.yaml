@@ -1,3 +1,6 @@
+# Tenant ServiceAccount + RoleBinding. The HelmRelease impersonates this SA
+# (spec.serviceAccountName in release.yaml), and the binding is namespace-scoped
+# admin — so Flux applies the tenant's manifests confined to its own namespace.
 apiVersion: v1
 kind: ServiceAccount
 metadata:

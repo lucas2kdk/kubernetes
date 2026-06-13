@@ -1,3 +1,5 @@
+# Tenant namespace. Note the absence of platform.io/managed: "true" — tenants
+# are deliberately subject to the Kyverno guardrails and the Cilium default-deny.
 apiVersion: v1
 kind: Namespace
 metadata:

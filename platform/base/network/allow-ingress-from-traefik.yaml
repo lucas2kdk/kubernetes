@@ -1,3 +1,16 @@
+# ============================================================================
+# NAMESPACE EXCLUSION LIST — ONE OF FOUR THAT MUST STAY SET-IDENTICAL.
+# The NotIn `values:` list below is one of the four platform-namespace exclusion
+# lists kept in lockstep (the other three: default-deny.yaml,
+# deny-cloud-metadata.yaml, and policies/generate-baseline-netpol.yaml), enforced
+# by scripts/check-namespace-lists.sh (`just namespaces`, PR gate). Add a platform
+# namespace to all four by hand.
+#
+# NOTE: allow-ingress-from-monitoring.yaml mirrors this same list but is NOT one
+# of the four guarded files — keep it aligned manually.
+# longhorn-system MUST stay excluded (see its inline comment + the 2026-06-12
+# CSI outage that the lockstep guard now prevents).
+# ============================================================================
 apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
 metadata:

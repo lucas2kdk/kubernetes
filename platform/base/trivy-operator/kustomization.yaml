@@ -1,3 +1,7 @@
+# Trivy Operator component base: on-cluster CIS benchmark + vuln/config/RBAC
+# assessments, surfaced as the aquasecurity.github.io report CRDs. The rbac.yaml
+# ClusterRole widens view access to the cluster-scoped reports so the Headlamp
+# plugin (and the tailnet `maintainers` group) can read them.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

@@ -1,3 +1,9 @@
+# Monitors for subsystems that don't ship their own (Flux controllers, Longhorn).
+# Kept in a separate component from kube-prometheus-stack so its fleet
+# Kustomization can dependsOn kube-prometheus-stack and only apply these
+# ServiceMonitor/PodMonitor CRs *after* the operator's CRDs exist — applying them
+# in the same Kustomization as the CRD-installing HelmRelease would race the CRDs.
+# The files are reused (not copied) from the kube-prometheus-stack base.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

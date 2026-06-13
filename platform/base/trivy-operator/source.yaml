@@ -1,3 +1,6 @@
+# HelmRepository for the Aqua charts (trivy-operator), in the shared flux-system
+# source namespace. Named `aqua`; the HelmRelease's chart.spec.sourceRef points
+# here cross-namespace (allowed for platform components).
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:

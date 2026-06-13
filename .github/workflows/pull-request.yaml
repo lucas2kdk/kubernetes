@@ -11,13 +11,20 @@ on:
   pull_request:
     branches: ["main"]
 
+# Least privilege: these checks only read the tree, no write scopes granted.
 permissions:
   contents: read
 
+# One in-flight run per branch; a new push cancels the superseded run so the PR
+# isn't gated on stale commits.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Tool versions are pinned here (not in the composite action) so Renovate's
+# regex manager can see and bump them via the `# renovate:` annotations; the
+# setup-tools action receives them as inputs. Keep the annotation directly above
+# each var — that comment is what Renovate matches on.
 env:
   # renovate: datasource=github-releases depName=kubernetes-sigs/kustomize extractVersion=^kustomize/v(?<version>.+)$
   KUSTOMIZE_VERSION: "5.8.1"
@@ -30,7 +37,12 @@ env:
   # renovate: datasource=github-releases depName=rhysd/actionlint extractVersion=^v(?<version>.+)$
   ACTIONLINT_VERSION: "1.7.12"
 
+# Each check is its own job so they run in parallel and a failure points at one
+# check. Every job installs only the tools it needs via the shared composite
+# action (./.github/actions/setup-tools) — one place to define the pinned
+# install steps instead of repeating curl blocks per job.
 jobs:
+  # Schema validation: build each kustomization + kubeconform (just validate).
   validate:
     runs-on: ubuntu-latest
     steps:
@@ -49,6 +61,7 @@ jobs:
       - name: Validate manifests
         run: just validate
 
+  # Kyverno policy evaluation + unit tests (just policy).
   policy:
     runs-on: ubuntu-latest
     steps:
@@ -61,6 +74,7 @@ jobs:
           kustomize: ${{ env.KUSTOMIZE_VERSION }}
           kyverno: ${{ env.KYVERNO_VERSION }}
 
+      # policy-check.sh parses rendered YAML with python3 + PyYAML.
       - name: Install PyYAML
         run: pip install --quiet pyyaml
 
@@ -70,6 +84,7 @@ jobs:
       - name: Evaluate policies
         run: just policy
 
+  # Committed-secret scan of the working tree (just secrets / gitleaks).
   secrets:
     runs-on: ubuntu-latest
     steps:
@@ -87,6 +102,8 @@ jobs:
       - name: Scan for secrets
         run: just secrets
 
+  # Platform-namespace exclusion-list drift guard (just namespaces).
+  # No setup-tools step: the script only needs yq/python3, preinstalled on the runner.
   namespaces:
     runs-on: ubuntu-latest
     steps:
@@ -99,6 +116,7 @@ jobs:
       - name: Check namespace exclusion lists
         run: just namespaces
 
+  # Lint these workflow files themselves (just lint / actionlint).
   lint:
     runs-on: ubuntu-latest
     steps:

@@ -1,3 +1,5 @@
+# HelmRepository for the Policy Reporter chart, in the shared flux-system source
+# namespace (cross-namespace sourceRef is allowed for platform components).
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:

@@ -1,3 +1,8 @@
+# Kyverno dashboard (grafana.com gnetId 15987), imported JSON. The
+# grafana_dashboard="1" label is what the Grafana sidecar watches to auto-load
+# it; grafana_folder files it under "Platform". Reads the default Prometheus
+# datasource, fed by Kyverno's per-controller ServiceMonitors (enabled in the
+# kyverno HelmRelease).
 apiVersion: v1
 kind: ConfigMap
 metadata:

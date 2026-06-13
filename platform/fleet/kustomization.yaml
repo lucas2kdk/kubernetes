@@ -18,6 +18,8 @@ resources:
   - traefik.yaml
   - trivy-operator.yaml
   - tsidp.yaml
+# Apply the shared spec defaults (interval/sourceRef/prune/wait/…) onto every
+# component Kustomization above, so each file only declares what differs.
 patches:
   - path: _defaults.yaml
     target:

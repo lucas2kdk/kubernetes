@@ -1,3 +1,8 @@
+# Headlamp dashboard base. Reached over the tailnet only (ingress.yaml, no public
+# DNS); logins go through tsidp OIDC (external-secret.yaml -> headlamp-oidc, wired
+# via valuesFrom) with group-based RBAC (rbac-oidc.yaml). Multi-cluster picker is
+# fed by admin kubeconfigs synced from Vault (external-secret-kubeconfigs.yaml).
+# dependsOn external-secrets-stores in the fleet graph so the OIDC Secret exists first.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

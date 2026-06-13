@@ -1,3 +1,7 @@
+# platform.io/managed: "true" exempts this namespace from the tenant guardrails
+# (Kyverno admission policies + Cilium default-deny). Also the
+# cluster-resource-namespace where ClusterIssuer secret refs (the Cloudflare
+# token) resolve. See README "Platform namespace convention".
 apiVersion: v1
 kind: Namespace
 metadata:

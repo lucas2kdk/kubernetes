@@ -24,12 +24,18 @@ else
 fi
 
 kubeconform_args=(
-  -strict
+  -strict                  # reject unknown/duplicate fields, so manifest typos fail
   -summary
   -verbose
-  -ignore-missing-schemas
-  -schema-location default
+  -ignore-missing-schemas  # CRDs with no published schema are skipped, not failed
+                           # (anything matched below IS validated; this only spares
+                           # the long tail of CRDs no catalog covers)
+  -schema-location default # upstream Kubernetes core/built-in API schemas
+  # Flux CRD schemas (Kustomization, HelmRelease, sources, ...): the cluster CRs
+  # under clusters/ and platform/fleet/ are Flux kinds, not core Kubernetes.
   -schema-location 'https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/{{.ResourceKind}}{{.KindSuffix}}.json'
+  # Community CRD catalog (cert-manager, kyverno, monitoring/Prometheus, Cilium,
+  # ...) — covers the third-party CRDs the platform manifests reference.
   -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
 )
 
@@ -49,6 +55,8 @@ while read -r dir; do
   else
     failed+=("$dir")
   fi
+# %h prints each match's parent dir (the build target); sort -u dedupes so a dir
+# with multiple kustomization references is built once.
 done < <(find . -name kustomization.yaml -not -path './.git/*' -printf '%h\n' | sort -u)
 
 echo "== validating cluster Flux Kustomization objects =="

@@ -1,3 +1,7 @@
+# PDB for the Kyverno admission controller, capping voluntary disruptions so a
+# drain can't take down the webhook backend (which would block admission while it
+# is unavailable — though forceFailurePolicyIgnore in release.yaml keeps that
+# fail-open). The chart ships no PDB, so this is added here.
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:

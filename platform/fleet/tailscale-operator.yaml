@@ -1,3 +1,4 @@
+# Tailscale operator — the API-server proxy in auth mode (see README Tailscale section).
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -6,8 +7,10 @@ metadata:
 spec:
   path: ./platform/base/tailscale-operator
   dependsOn:
+    # Reads its OAuth client creds from Vault, so the store must exist first.
     - name: external-secrets-stores
   postBuild:
     substituteFrom:
+      # ${cluster_name} -> operator hostname k8s-api-${cluster_name}.
       - kind: ConfigMap
         name: cluster-vars
