@@ -64,8 +64,17 @@ targets=0
 while read -r dir; do
   targets=$((targets + 1))
   printf '→ %s\n' "$dir"
-  build "$dir" >> "$combined"
+  # Prefix each build with --- so yaml.safe_load_all sees clean document boundaries.
+  { echo "---"; build "$dir"; } >> "$combined"
 done < <(find . -name kustomization.yaml -not -path './.git/*' -not -path './.claude/*' -printf '%h\n' | sort -u)
+
+# clusters/*/flux-system/ contains gotk-sync.yaml (GitRepository + flux-system
+# Kustomization) but has no kustomization.yaml — kustomize cannot build it. Cat
+# the raw files directly so the bootstrap GitRepository is in the source set.
+while read -r f; do
+  printf '→ %s (raw)\n' "$f"
+  { echo "---"; cat "$f"; } >> "$combined"
+done < <(find ./clusters -path '*/flux-system/*.yaml' -not -name kustomization.yaml | sort)
 
 if [ "$targets" -eq 0 ]; then
   echo "✗ FAIL: no kustomization.yaml targets found — wrong working directory?" >&2

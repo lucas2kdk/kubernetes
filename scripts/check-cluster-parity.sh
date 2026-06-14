@@ -1,27 +1,25 @@
 #!/usr/bin/env bash
-# Guard against cluster drift: every cluster must include all platform fleet components.
+# Guard against undeclared Flux Kustomizations appearing in clusters.
 #
 # The platform fleet is defined in platform/fleet/ as a set of Flux Kustomization
-# objects. Each cluster opts in to the fleet by referencing platform/fleet/ in its
-# kustomization.yaml. If a cluster omits a fleet component (or adds one not in the
-# fleet), it silently diverges from the intended platform baseline. This drift is
-# hard to spot by reading files because a cluster's kustomization.yaml might
-# reference the whole fleet directory, an overlay might drop entries, or a patch
-# might alter names — you cannot trust the file list alone.
+# objects. Clusters may opt in to a SUBSET of the fleet (e.g. test-home runs a
+# lighter set than prod-fsn — this is intentional and documented). What is NOT
+# allowed is a cluster containing Kustomization objects that are not in the fleet
+# at all — these represent undeclared platform components that bypass the standard
+# fleet lifecycle (versioning, Renovate, policy review).
 #
 # This script compares BUILT OUTPUT, not file lists:
 #
 #   1. Build platform/fleet/ → extract all Flux Kustomization metadata.name values
 #      → this is the authoritative fleet set.
-#   2. Build each cluster → extract all Flux Kustomization metadata.name values
-#      → compare against the fleet set.
-#   3. Report any names in the fleet but missing from a cluster (dropped component)
-#      or in a cluster but absent from the fleet (unexpected addition).
+#   2. Build each cluster → extract all Flux Kustomization metadata.name values.
+#   3. Fail if any cluster contains a name NOT in the fleet set (unexpected
+#      addition). Missing fleet components are allowed — clusters can be subsets.
 #
 # Exclusions:
 #   - kustomize.config.k8s.io Kustomizations (build configs, not API objects).
-#   - The flux-system Kustomization (Flux bootstrap self-reference; it is always
-#     present in clusters but is not a fleet-managed platform component).
+#   - flux-system: Flux bootstrap self-reference, always present, not fleet-managed.
+#   - tenants: per-cluster tenant aggregation Kustomization, not a fleet component.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -65,7 +63,8 @@ with open(sys.argv[1]) as f:
             continue
         meta = doc.get("metadata") or {}
         name = meta.get("name", "")
-        if name and name != "flux-system":
+        # Exclude flux-system (bootstrap self-ref) and tenants (per-cluster, not fleet).
+        if name and name not in ("flux-system", "tenants"):
             print(name)
 PY
 }
@@ -101,23 +100,20 @@ for cluster in "${clusters[@]}"; do
   fleet_set="$tmp/fleet.set"
   cluster_set="$tmp/$(basename "$cluster").set"
 
-  # Names in fleet but missing from the cluster.
-  missing="$(comm -23 "$fleet_set" "$cluster_set")"
-  # Names in cluster but not in fleet.
+  # Names in cluster but not in fleet — these are the problem.
+  # Missing fleet components in a cluster are allowed (clusters can be subsets).
   extra="$(comm -13 "$fleet_set" "$cluster_set")"
+  missing="$(comm -23 "$fleet_set" "$cluster_set")"
 
-  if [ -n "$missing" ] || [ -n "$extra" ]; then
+  if [ -n "$extra" ]; then
     overall_fail=1
-    if [ -n "$missing" ]; then
-      echo "  fleet components missing from $cluster:"
-      printf '    ✗ %s\n' $missing
-    fi
-    if [ -n "$extra" ]; then
-      echo "  components in $cluster not present in fleet (unexpected additions):"
-      printf '    ✗ %s\n' $extra
-    fi
+    echo "  ✗ components in $cluster not in fleet (undeclared — must be added to fleet or removed):"
+    printf '    ✗ %s\n' $extra
   else
-    echo "✓ $cluster matches fleet set exactly"
+    echo "✓ $cluster contains no undeclared fleet components"
+  fi
+  if [ -n "$missing" ]; then
+    echo "  (note: $cluster runs a subset — $(echo "$missing" | wc -l | tr -d ' ') fleet components not deployed here, which is allowed)"
   fi
 done
 
@@ -128,4 +124,4 @@ if [ "$overall_fail" -ne 0 ]; then
   exit 1
 fi
 
-echo "✓ all clusters include exactly the fleet set"
+echo "✓ all clusters contain only fleet-declared components"
