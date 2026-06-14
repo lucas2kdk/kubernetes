@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.0.0...platform/v1.1.0) (2026-06-14)
+
+
+### Features
+
+* **test-home:** expand to near-full fleet with cross-cluster observability ([#30](https://github.com/lucas2kdk/kubernetes/issues/30)) ([f4521f1](https://github.com/lucas2kdk/kubernetes/commit/f4521f131a3634b95852362f1130faadc188be50))
+
 ## 1.0.0 (2026-06-14)
 
 
