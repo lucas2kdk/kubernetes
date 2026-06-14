@@ -15,6 +15,23 @@ patches:
       kind: HelmRelease
       name: kube-prometheus-stack
     patch: |
+      # Second Grafana datasource so dashboards can switch clusters from their
+      # `datasource` template variable (the chart provisions the local one,
+      # uid=prometheus, as default). Points at the same egress Service the
+      # federation job uses to reach test-home's Prometheus over the tailnet;
+      # the proxy presents test-home's MagicDNS cert, not the svc name, so
+      # tlsSkipVerify — traffic is already tailnet-encrypted.
+      - op: add
+        path: /spec/values/grafana/additionalDataSources
+        value:
+          - name: Prometheus (test-home)
+            type: prometheus
+            uid: prometheus-test-home
+            access: proxy
+            url: https://prometheus-test-federate.monitoring.svc:443
+            isDefault: false
+            jsonData:
+              tlsSkipVerify: true
       - op: add
         path: /spec/values/prometheus/prometheusSpec/additionalScrapeConfigs
         value:
