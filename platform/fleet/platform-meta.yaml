@@ -5,3 +5,14 @@ metadata:
   namespace: flux-system
 spec:
   path: ./base/platform-meta
+  # Self-proving version (#58). The platform-version ConfigMap has no status, so
+  # wait:true (from _defaults) would mark it Ready the instant it applies —
+  # including with the in-repo "0.0.0" sentinel. This CEL health expression makes
+  # the version *value* the gate: the Kustomization only reports Ready once the
+  # ConfigMap carries a real, CI-substituted version. So a cluster's reported
+  # platform_build_info can never read green off the unsubstituted source tree;
+  # a stuck reconcile honestly leaves the old version as current.
+  healthCheckExprs:
+    - apiVersion: v1
+      kind: ConfigMap
+      current: "data.version != '0.0.0'"
