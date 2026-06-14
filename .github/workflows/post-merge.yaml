@@ -1,0 +1,51 @@
+name: Post-merge
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: post-merge-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # renovate: datasource=github-releases depName=kubernetes-sigs/kustomize extractVersion=^kustomize/v(?<version>.+)$
+  KUSTOMIZE_VERSION: "5.8.1"
+
+jobs:
+  sources:
+    name: Source coherence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          kustomize: ${{ env.KUSTOMIZE_VERSION }}
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+      - name: Install just
+        uses: extractions/setup-just@v4
+      - name: Check source coherence
+        run: just sources
+
+  parity:
+    name: Cluster parity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          kustomize: ${{ env.KUSTOMIZE_VERSION }}
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+      - name: Install just
+        uses: extractions/setup-just@v4
+      - name: Check cluster parity
+        run: just parity

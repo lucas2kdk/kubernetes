@@ -43,7 +43,10 @@ echo "== rendering manifests reconciled by clusters/$cluster =="
 # ./clusters/<name>), which would otherwise re-emit the cluster's own CRs.
 build "clusters/$cluster" > "$tmp/cluster-objs.yaml"
 while read -r dir; do
-  [ -f "$dir/kustomization.yaml" ] || continue
+  if [ ! -f "$dir/kustomization.yaml" ]; then
+    echo "✗ dangling spec.path: $dir has no kustomization.yaml" >&2
+    exit 1
+  fi
   printf '→ %s\n' "$dir"
   { echo "---"; build "$dir"; } >> "$tmp/resources.yaml"
 done < <(python3 - "$tmp/cluster-objs.yaml" <<'PY'
@@ -115,3 +118,33 @@ if grep -q 'longhorn-system' "$gen"; then
   exit 1
 fi
 echo "✓ tenant namespace gets a baseline CNP; longhorn-system is correctly excluded"
+
+echo
+echo "== validating generated CiliumNetworkPolicy schema =="
+if [ -s "$gen" ]; then
+  if kubeconform \
+    -strict \
+    -summary \
+    -ignore-missing-schemas \
+    -schema-location default \
+    -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+    "$gen"; then
+    echo "✓ generated CiliumNetworkPolicy is schema-valid"
+  else
+    echo "✗ generated CiliumNetworkPolicy failed schema validation" >&2
+    exit 1
+  fi
+else
+  echo "✗ no generated CNP output to validate" >&2
+  exit 1
+fi
+
+echo
+echo "== asserting generated CNP denies cloud metadata endpoint (169.254.169.254) =="
+if grep -q '169.254.169.254' "$gen"; then
+  echo "✓ generated CNP contains egress deny for 169.254.169.254/32"
+else
+  echo "✗ FAIL: generated CiliumNetworkPolicy does not deny 169.254.169.254/32" >&2
+  echo "  Hetzner instance metadata is reachable — tenant pods can exfiltrate credentials" >&2
+  exit 1
+fi

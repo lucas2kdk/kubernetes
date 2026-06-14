@@ -112,6 +112,97 @@ spec:
       securityContext:
         privileged: true
 ---
+---
+# Pod with ONLY securityContext.privileged: true — tests baseline isolation of
+# this one field. A policy bug that ignores privileged in containers[] would
+# allow this through while bad-pod (multi-violation) still fails.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: privileged-pod
+  namespace: tenant-app
+spec:
+  containers:
+    - name: app
+      image: nginx:1.27.2
+      securityContext:
+        privileged: true
+---
+# Pod with ONLY hostNetwork: true.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostnetwork-pod
+  namespace: tenant-app
+spec:
+  hostNetwork: true
+  containers:
+    - name: app
+      image: nginx:1.27.2
+---
+# Pod with ONLY hostPID: true.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hostpid-pod
+  namespace: tenant-app
+spec:
+  hostPID: true
+  containers:
+    - name: app
+      image: nginx:1.27.2
+---
+# Pod with ONLY allowPrivilegeEscalation: true — tests restricted profile.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: privesc-pod
+  namespace: tenant-app
+spec:
+  containers:
+    - name: app
+      image: nginx:1.27.2
+      securityContext:
+        allowPrivilegeEscalation: true
+---
+# Pod with an initContainer carrying privileged: true — tests that the policy
+# checks initContainers[], not just containers[].
+apiVersion: v1
+kind: Pod
+metadata:
+  name: init-privileged-pod
+  namespace: tenant-app
+spec:
+  initContainers:
+    - name: init
+      image: nginx:1.27.2
+      securityContext:
+        privileged: true
+  containers:
+    - name: app
+      image: nginx:1.27.2
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      livenessProbe:
+        httpGet:
+          path: /
+          port: 80
+        periodSeconds: 10
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 80
+        periodSeconds: 10
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+---
 # Pod in the default namespace — must FAIL disallow-default-namespace.
 apiVersion: v1
 kind: Pod

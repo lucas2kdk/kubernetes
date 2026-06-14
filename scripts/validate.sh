@@ -16,6 +16,43 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+echo "== asserting no raw Secret objects =="
+if grep -rn 'kind: Secret' . --include='*.yaml' --exclude-dir=.git | grep -v '^\s*#'; then
+  echo "✗ raw kind: Secret objects found — use ExternalSecret instead" >&2
+  exit 1
+fi
+echo "✓ no raw Secret objects"
+
+echo "== asserting Kyverno policies use failurePolicy: Fail =="
+if grep -rn 'failurePolicy: Ignore' platform/base/policies/ 2>/dev/null; then
+  echo "✗ ClusterPolicy with failurePolicy: Ignore found — cluster fails open if Kyverno is down" >&2
+  exit 1
+fi
+echo "✓ no failurePolicy: Ignore in ClusterPolicies"
+
+echo "== asserting CRD-shipping HelmReleases have crds: CreateReplace =="
+crd_releases=(
+  platform/base/cert-manager/release.yaml
+  platform/base/kyverno/release.yaml
+  platform/base/external-secrets/release.yaml
+  platform/base/kube-prometheus-stack/release.yaml
+)
+crd_failed=()
+for f in "${crd_releases[@]}"; do
+  [ -f "$f" ] || { echo "✗ expected CRD-shipping release not found: $f" >&2; crd_failed+=("$f"); continue; }
+  if ! grep -q 'crds: CreateReplace' "$f"; then
+    echo "✗ $f is missing crds: CreateReplace (needed for both install and upgrade)" >&2
+    crd_failed+=("$f")
+  else
+    printf '→ %s ✓\n' "$f"
+  fi
+done
+if [ "${#crd_failed[@]}" -gt 0 ]; then
+  echo "✗ CRD-shipping HelmReleases missing crds: CreateReplace: ${crd_failed[*]}" >&2
+  exit 1
+fi
+echo "✓ all CRD-shipping HelmReleases have crds: CreateReplace"
+
 # kustomize binary, or kubectl's built-in as a fallback (both honour the flag).
 if command -v kustomize >/dev/null 2>&1; then
   build() { kustomize build "$1" --load-restrictor LoadRestrictionsNone; }
@@ -31,6 +68,8 @@ kubeconform_args=(
   -schema-location default
   -schema-location 'https://raw.githubusercontent.com/fluxcd-community/flux2-schemas/main/{{.ResourceKind}}{{.KindSuffix}}.json'
   -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+  -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/traefik.io/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
+  -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/traefik.containo.us/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
 )
 
 passed=0

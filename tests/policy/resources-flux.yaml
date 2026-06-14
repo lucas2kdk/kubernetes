@@ -87,6 +87,24 @@ spec:
         name: shared
         namespace: flux-system
 ---
+# Missing serviceAccountName on a HelmRelease — must FAIL the serviceAccountName
+# rule. Mirrors bad-kustomization-nosa but for HelmRelease objects.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: bad-helmrelease-nosa
+  namespace: tenant-app
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: app
+      version: "1.0.0"
+      sourceRef:
+        kind: HelmRepository
+        name: app
+        namespace: tenant-app
+---
 # Same SA omission, but in a platform.io/managed namespace — must be SKIPPED
 # (regression guard for the exclusion on this policy too).
 apiVersion: kustomize.toolkit.fluxcd.io/v1

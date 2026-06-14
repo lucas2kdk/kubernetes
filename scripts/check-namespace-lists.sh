@@ -135,3 +135,21 @@ echo "== canonical platform-namespace set =="
 nl -ba -w2 -s'. ' "$ref_set" | sed 's/^/  /'
 echo
 echo "✓ all four lists are set-identical ($(wc -l < "$ref_set") namespaces)"
+
+echo
+echo "== asserting exclusion guard covers all NotIn network policy files =="
+# Count the number of network policy files in platform/base/network/ that
+# contain a NotIn matchExpression (i.e., files that maintain their own
+# platform-namespace exclusion list). The cilium_files array must cover all of
+# them — if a new such file is added without updating this script, CI fails.
+actual_notin_files=$(grep -rl 'operator: NotIn' platform/base/network/ 2>/dev/null | sort | wc -l | tr -d ' ')
+declared_files=${#cilium_files[@]}
+if [ "$actual_notin_files" -ne "$declared_files" ]; then
+  echo "✗ FAIL: $actual_notin_files network policy files contain 'operator: NotIn' but" >&2
+  echo "  cilium_files array only covers $declared_files." >&2
+  echo "  Add the new file to the cilium_files array in this script." >&2
+  echo "  Files with NotIn:" >&2
+  grep -rl 'operator: NotIn' platform/base/network/ | sort | sed 's/^/    /' >&2
+  exit 1
+fi
+echo "✓ exclusion guard covers all $declared_files NotIn network policy files"

@@ -1,12 +1,24 @@
 name: PR
 
-# Gate every pull request to main. Five independent checks, all runnable
-# locally via `just check`:
-#   validate   — build each kustomization the way Flux does + kubeconform schemas
-#   policy     — evaluate the Kyverno ClusterPolicies against the rendered manifests
-#   namespaces — guard the four platform-namespace exclusion lists are in lockstep
-#   secrets    — scan the tree for committed secrets (gitleaks)
-#   lint       — lint these workflow files (actionlint)
+# Gate every pull request to main. Checks run in two tiers:
+#
+# Tier 1 — fast-fail, filesystem-only (no heavy tool install):
+#   secrets            — scan the tree for committed secrets (gitleaks)
+#   namespaces         — guard the four platform-namespace exclusion lists
+#   no-secrets-objects — assert no raw kind: Secret objects exist
+#
+# Tier 2 — static analysis (runs after tier 1 passes):
+#   validate           — build each kustomization + kubeconform schemas
+#   policy             — evaluate the Kyverno ClusterPolicies
+#   lint               — lint these workflow files (actionlint)
+#   check-rbac         — assert no forbidden RBAC verbs
+#   check-issuers      — verify Certificate objects reference existing ClusterIssuers
+#   check-dependson    — verify every spec.dependsOn reference resolves
+#   check-alerts       — assert required alert rules exist
+#   check-dashboards   — assert required Grafana dashboards exist
+#   check-secret-stores — verify ExternalSecret store references resolve
+#   image-digests      — assert directly-authored images are pinned to @sha256: digests
+#   collisions         — check no two Kustomizations share the same (namespace, name) pair
 on:
   pull_request:
     branches: ["main"]
@@ -31,7 +43,59 @@ env:
   ACTIONLINT_VERSION: "1.7.12"
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # Tier 1 — fast-fail, filesystem-only
+  # ---------------------------------------------------------------------------
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          gitleaks: ${{ env.GITLEAKS_VERSION }}
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Scan for secrets
+        run: just secrets
+
+  namespaces:
+    name: Namespace lists
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Check namespace exclusion lists
+        run: just namespaces
+
+  no-secrets-objects:
+    name: No raw Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Install just
+        uses: extractions/setup-just@v4
+      - name: Assert no raw Secret objects
+        run: just no-secrets-objects
+
+  # ---------------------------------------------------------------------------
+  # Tier 2 — static analysis (requires tier 1 to pass)
+  # ---------------------------------------------------------------------------
+
   validate:
+    name: Validate manifests
+    needs: [secrets, namespaces, no-secrets-objects]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -50,6 +114,8 @@ jobs:
         run: just validate
 
   policy:
+    name: Kyverno policy
+    needs: [secrets, namespaces, no-secrets-objects]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -70,36 +136,9 @@ jobs:
       - name: Evaluate policies
         run: just policy
 
-  secrets:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Install tools
-        uses: ./.github/actions/setup-tools
-        with:
-          gitleaks: ${{ env.GITLEAKS_VERSION }}
-
-      - name: Install just
-        uses: extractions/setup-just@v4
-
-      - name: Scan for secrets
-        run: just secrets
-
-  namespaces:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Install just
-        uses: extractions/setup-just@v4
-
-      - name: Check namespace exclusion lists
-        run: just namespaces
-
   lint:
+    name: Lint workflows
+    needs: [secrets, namespaces, no-secrets-objects]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -115,3 +154,165 @@ jobs:
 
       - name: Lint workflows
         run: just lint
+
+  check-rbac:
+    name: RBAC verbs
+    needs: [secrets, namespaces, no-secrets-objects]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          kustomize: ${{ env.KUSTOMIZE_VERSION }}
+
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Assert no forbidden RBAC verbs
+        run: just check-rbac
+
+  check-issuers:
+    name: Certificate issuers
+    needs: [secrets, namespaces, no-secrets-objects]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          kustomize: ${{ env.KUSTOMIZE_VERSION }}
+
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Verify Certificate issuers
+        run: just check-issuers
+
+  check-dependson:
+    name: dependsOn references
+    needs: [secrets, namespaces, no-secrets-objects]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          kustomize: ${{ env.KUSTOMIZE_VERSION }}
+
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Verify dependsOn references
+        run: just dependson
+
+  check-alerts:
+    name: Alert rules
+    needs: [secrets, namespaces, no-secrets-objects]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          kustomize: ${{ env.KUSTOMIZE_VERSION }}
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Assert required alert rules exist
+        run: just check-alerts
+
+  check-dashboards:
+    name: Grafana dashboards
+    needs: [secrets, namespaces, no-secrets-objects]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          kustomize: ${{ env.KUSTOMIZE_VERSION }}
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Assert required Grafana dashboards exist
+        run: just check-dashboards
+
+  check-secret-stores:
+    name: ExternalSecret stores
+    needs: [secrets, namespaces, no-secrets-objects]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          kustomize: ${{ env.KUSTOMIZE_VERSION }}
+
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Verify ExternalSecret store references
+        run: just check-secret-stores
+
+  image-digests:
+    name: Image digests
+    needs: [secrets, namespaces, no-secrets-objects]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Assert images pinned to sha256 digests
+        run: just image-digests
+
+  collisions:
+    name: Kustomization collisions
+    needs: [secrets, namespaces, no-secrets-objects]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install tools
+        uses: ./.github/actions/setup-tools
+        with:
+          kustomize: ${{ env.KUSTOMIZE_VERSION }}
+
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      - name: Install just
+        uses: extractions/setup-just@v4
+
+      - name: Check for Kustomization name collisions
+        run: just collisions

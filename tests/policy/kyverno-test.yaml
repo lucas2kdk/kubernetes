@@ -130,6 +130,15 @@ results:
     kind: Pod
     result: skip
 
+  # --- disallow-default-namespace: excluded-pod passes (not in default ns) ---
+  # Guards against accidentally adding a platform exclusion to this policy —
+  # if someone added such an exclusion, this would change to skip and go unnoticed.
+  - policy: disallow-default-namespace
+    rule: disallow-default-namespace
+    resources: [excluded-pod]
+    kind: Pod
+    result: pass
+
   # --- default-namespace pod: only disallow-default-namespace fires ---
   - policy: disallow-default-namespace
     rule: disallow-default-namespace
@@ -176,12 +185,45 @@ results:
     resources: [bad-helmrelease-xns]
     kind: HelmRelease
     result: fail
+  # Missing serviceAccountName on a HelmRelease is rejected.
+  - policy: flux-multi-tenancy
+    rule: serviceAccountName
+    resources: [bad-helmrelease-nosa]
+    kind: HelmRelease
+    result: fail
   # Same SA omission in a platform.io/managed namespace is exempt — skipped.
   - policy: flux-multi-tenancy
     rule: serviceAccountName
     resources: [excluded-kustomization]
     kind: Kustomization
     result: skip
+
+  # --- per-field pod-security fixtures ---
+  - policy: pod-security-baseline
+    rule: baseline
+    resources: [privileged-pod]
+    kind: Pod
+    result: fail
+  - policy: pod-security-baseline
+    rule: baseline
+    resources: [hostnetwork-pod]
+    kind: Pod
+    result: fail
+  - policy: pod-security-baseline
+    rule: baseline
+    resources: [hostpid-pod]
+    kind: Pod
+    result: fail
+  - policy: pod-security-restricted
+    rule: restricted
+    resources: [privesc-pod]
+    kind: Pod
+    result: fail
+  - policy: pod-security-baseline
+    rule: baseline
+    resources: [init-privileged-pod]
+    kind: Pod
+    result: fail
 
   # --- generate-baseline-netpol: a tenant namespace gets the baseline CNP ---
   # Asserts the generated policy's full spec (same-ns ingress/egress + DNS). The

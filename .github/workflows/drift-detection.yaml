@@ -1,0 +1,98 @@
+name: Drift Detection
+
+# Nightly check that all Flux resources across both clusters are Ready.
+# Requires read-only kubeconfig secrets; see the "Check * drift" steps below
+# for setup instructions. Jobs skip gracefully when secrets are absent so the
+# workflow never blocks unrelated work during initial setup.
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # 02:00 UTC nightly
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: drift-detection
+  cancel-in-progress: false
+
+env:
+  # TODO: pin flux CLI version and add a renovate comment once fluxcd.io/install.sh
+  # supports a stable version-pinned URL. For now the script installs the latest
+  # stable release. Track https://github.com/fluxcd/flux2/releases for updates.
+  FLUX_VERSION: "latest"
+
+jobs:
+  drift-prod-fsn:
+    name: Drift — prod-fsn
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Check prod-fsn drift
+        env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_PROD_FSN }}
+        run: |
+          # Requires: KUBECONFIG_PROD_FSN secret — a base64-encoded read-only
+          # kubeconfig for prod-fsn. Set it in repo Settings → Secrets and
+          # variables → Actions → New repository secret.
+          #
+          # Generate with:
+          #   kubectl config view --minify --flatten | base64 -w0
+          # (using a ServiceAccount bound to a read-only ClusterRole is recommended)
+          if [ -z "${KUBECONFIG_DATA:-}" ]; then
+            echo "::warning::KUBECONFIG_PROD_FSN secret not configured — drift detection skipped for prod-fsn"
+            exit 0
+          fi
+          mkdir -p "$HOME/.kube"
+          echo "$KUBECONFIG_DATA" | base64 -d > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+          # Install flux CLI (latest stable).
+          curl -s https://fluxcd.io/install.sh | bash
+
+          not_ready=$(flux get all -A --status-selector ready=false 2>/dev/null || true)
+          if [ -n "$not_ready" ]; then
+            echo "::error::Cluster prod-fsn has resources not in Ready state:"
+            echo "$not_ready"
+            exit 1
+          fi
+          echo "✓ prod-fsn: all Flux resources are Ready"
+
+  drift-test-home:
+    name: Drift — test-home
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Check test-home drift
+        env:
+          KUBECONFIG_DATA: ${{ secrets.KUBECONFIG_TEST_HOME }}
+        run: |
+          # Requires: KUBECONFIG_TEST_HOME secret — a base64-encoded read-only
+          # kubeconfig for test-home. Set it in repo Settings → Secrets and
+          # variables → Actions → New repository secret.
+          #
+          # Generate with:
+          #   kubectl config view --minify --flatten | base64 -w0
+          # (using a ServiceAccount bound to a read-only ClusterRole is recommended)
+          if [ -z "${KUBECONFIG_DATA:-}" ]; then
+            echo "::warning::KUBECONFIG_TEST_HOME secret not configured — drift detection skipped for test-home"
+            exit 0
+          fi
+          mkdir -p "$HOME/.kube"
+          echo "$KUBECONFIG_DATA" | base64 -d > "$HOME/.kube/config"
+          chmod 600 "$HOME/.kube/config"
+
+          curl -s https://fluxcd.io/install.sh | bash
+
+          not_ready=$(flux get all -A --status-selector ready=false 2>/dev/null || true)
+          if [ -n "$not_ready" ]; then
+            echo "::error::Cluster test-home has resources not in Ready state:"
+            echo "$not_ready"
+            exit 1
+          fi
+          echo "✓ test-home: all Flux resources are Ready"
