@@ -15,6 +15,9 @@ resources:
   - require-requests.yaml
   - disallow-latest-tag.yaml
   - require-pod-probes.yaml
+  # Scope the DNS-01 ClusterIssuer to platform namespaces (tenants must use a
+  # namespaced Issuer).
+  - restrict-clusterissuer.yaml
   # Network: generate a baseline same-namespace + DNS CiliumNetworkPolicy for
   # every tenant namespace (plus the RBAC Kyverno needs to manage them).
   - kyverno-cilium-rbac.yaml

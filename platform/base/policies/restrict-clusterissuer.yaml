@@ -1,0 +1,57 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-clusterissuer
+  annotations:
+    policies.kyverno.io/title: Restrict ClusterIssuer to Platform
+    policies.kyverno.io/category: Multi-Tenancy
+    policies.kyverno.io/description: >-
+      The DNS-01 ClusterIssuer is cluster-scoped and can mint a certificate for
+      any hostname in the Cloudflare zone, so a tenant Certificate that
+      references it could obtain a cert for a platform host (impersonation /
+      MITM). Tenant namespaces must use a namespaced Issuer; only
+      platform.io/managed namespaces may reference a ClusterIssuer.
+spec:
+  # background: true also surfaces pre-existing Certificates in PolicyReports,
+  # not just at admission.
+  background: true
+  rules:
+    - name: tenant-no-clusterissuer
+      match:
+        any:
+          - resources:
+              kinds:
+                - Certificate
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-node-lease
+                - kube-public
+                - flux-system
+          # Platform-managed namespaces carry platform.io/managed (set on each
+          # platform/base/*/namespace.yaml). System namespaces above aren't
+          # repo-managed, so they stay an explicit list — same shape as the
+          # other tenant-facing policies.
+          - resources:
+              namespaceSelector:
+                matchLabels:
+                  platform.io/managed: "true"
+      validate:
+        # Audit for now, consistent with the Tier-1 baseline rollout; promote to
+        # Enforce per-environment once policy-reporter shows clean.
+        failureAction: Audit
+        message: >-
+          Tenant Certificates must reference a namespaced Issuer, not a
+          cluster-wide ClusterIssuer (which can mint certs for any zone host).
+        # deny-condition, not a `!ClusterIssuer` pattern: issuerRef.kind is
+        # optional and defaults to "Issuer" when omitted. A negation pattern
+        # would wrongly flag a kind-less (Issuer) cert because the pattern field
+        # is absent; this only fires when kind is explicitly ClusterIssuer.
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.spec.issuerRef.kind }}"
+                operator: Equals
+                value: ClusterIssuer

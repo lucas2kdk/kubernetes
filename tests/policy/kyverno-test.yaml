@@ -22,6 +22,7 @@ policies:
   - ../../platform/base/policies/require-pod-probes.yaml
   - ../../platform/base/policies/require-requests.yaml
   - ../../platform/base/policies/flux-multi-tenancy.yaml
+  - ../../platform/base/policies/restrict-clusterissuer.yaml
   - ../../platform/base/policies/generate-baseline-netpol.yaml
 resources:
   - resources.yaml
@@ -224,6 +225,24 @@ results:
     resources: [init-privileged-pod]
     kind: Pod
     result: fail
+
+  # --- restrict-clusterissuer: tenant ClusterIssuer ref rejected, namespaced
+  # Issuer allowed, platform namespace exempt ---
+  - policy: restrict-clusterissuer
+    rule: tenant-no-clusterissuer
+    resources: [tenant-cert-clusterissuer]
+    kind: Certificate
+    result: fail
+  - policy: restrict-clusterissuer
+    rule: tenant-no-clusterissuer
+    resources: [tenant-cert-issuer]
+    kind: Certificate
+    result: pass
+  - policy: restrict-clusterissuer
+    rule: tenant-no-clusterissuer
+    resources: [platform-cert-clusterissuer]
+    kind: Certificate
+    result: skip
 
   # --- generate-baseline-netpol: a tenant namespace gets the baseline CNP ---
   # Asserts the generated policy's full spec (same-ns ingress/egress + DNS). The
