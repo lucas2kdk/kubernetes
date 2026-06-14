@@ -1,0 +1,11 @@
+# Cluster-scoped PriorityClasses (#47). No dependsOn — nothing must reconcile
+# first; workloads only need the classes to exist before they reference them.
+# PriorityClass is cluster-scoped (no namespace), so it is exempt from the four
+# namespace-exclusion lists.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: priority-classes
+  namespace: flux-system
+spec:
+  path: ./base/priority-classes
