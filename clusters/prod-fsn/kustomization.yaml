@@ -8,3 +8,18 @@ resources:
   - ../../platform/fleet/fleet-vars.yaml # fleet-wide ${tailnet}; referenced directly, not part of platform/fleet aggregate
   - tenants.yaml # per-cluster tenants Kustomization (spec.path can't be substituted, so it lives here not in fleet/)
   - ../../platform/fleet # the whole reconcile graph (all components + dependsOn), referenced not copied
+
+# Redirect just the kube-prometheus-stack CR (defined once in the fleet) to the
+# prod-fsn overlay, which adds the cross-cluster federation pull of test-home's
+# Prometheus. spec.path can't be substituted, so it's patched here; the fleet
+# CR's fleet-vars substituteFrom (for ${tailnet}) is preserved.
+patches:
+  - target:
+      group: kustomize.toolkit.fluxcd.io
+      version: v1
+      kind: Kustomization
+      name: kube-prometheus-stack
+    patch: |
+      - op: replace
+        path: /spec/path
+        value: ./overlays/prod-fsn/kube-prometheus-stack

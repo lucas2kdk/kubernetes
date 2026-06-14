@@ -1,0 +1,23 @@
+# Expose test-home's Prometheus on the tailnet only — same model as the Grafana
+# ingress in the base: no Traefik route, no public DNS, zero public surface. The
+# Tailscale operator provisions a proxy device "prometheus-test" (tag:k8s)
+# serving HTTPS with a tailnet cert: https://prometheus-test.<tailnet>.ts.net
+# prod-fsn's Prometheus federates this via a tailnet egress (see the prod-fsn
+# overlay). The tailnet ACL is the auth boundary, so /federate needs no auth.
+# Requires MagicDNS + HTTPS certs on the tailnet and an ACL letting prod's
+# tag:k8s reach this device's :443.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus-test
+  namespace: monitoring
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service:
+      name: kube-prometheus-stack-prometheus
+      port:
+        number: 9090
+  tls:
+    - hosts:
+        - prometheus-test

@@ -1,0 +1,41 @@
+# test-home overlay: the shared kube-prometheus-stack base WITHOUT Grafana.
+# prod-fsn keeps the only Grafana; test-home exposes just its Prometheus on the
+# tailnet so prod federates it (see overlays/prod-fsn/kube-prometheus-stack).
+# Grafana-off is structural — it deletes whole base resources (the grafana-oidc
+# ExternalSecret would error against test's Vault, and the grafana Ingress would
+# register a dead "grafana" tailnet device) — so it's an overlay, not a ${var}.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../base/kube-prometheus-stack
+  - prometheus-ingress.yaml # tailnet exposure for prod's federation pull
+patches:
+  # Drop the Grafana subchart (Deployment, sidecar, provisioned datasource).
+  - target:
+      kind: HelmRelease
+      name: kube-prometheus-stack
+    patch: |
+      - op: replace
+        path: /spec/values/grafana/enabled
+        value: false
+  # Remove the Grafana-only base resources that have no purpose without Grafana.
+  - target:
+      kind: Ingress
+      name: grafana
+    patch: |
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: grafana
+        namespace: monitoring
+  - target:
+      kind: ExternalSecret
+      name: grafana-oidc
+    patch: |
+      $patch: delete
+      apiVersion: external-secrets.io/v1
+      kind: ExternalSecret
+      metadata:
+        name: grafana-oidc
+        namespace: monitoring

@@ -1,0 +1,34 @@
+# prod-fsn overlay: the shared kube-prometheus-stack base plus cross-cluster
+# federation. prod runs the only Grafana; this pulls test-home's metrics into
+# prod's Prometheus over the tailnet so they show up in that one Grafana.
+# test-home exposes its Prometheus at prometheus-test.<tailnet>.ts.net (see
+# overlays/test-home/kube-prometheus-stack); the egress Service below gives
+# prod's in-cluster Prometheus a ClusterIP route to it, and the scrape config
+# federates /federate, tagging the series cluster=test-home.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../base/kube-prometheus-stack
+  - federate-egress-service.yaml
+patches:
+  - target:
+      kind: HelmRelease
+      name: kube-prometheus-stack
+    patch: |
+      - op: add
+        path: /spec/values/prometheus/prometheusSpec/additionalScrapeConfigs
+        value:
+          - job_name: federate-test-home
+            honor_labels: true
+            scheme: https
+            metrics_path: /federate
+            params:
+              "match[]":
+                - '{job!=""}'
+            tls_config:
+              server_name: prometheus-test.${tailnet}.ts.net
+            static_configs:
+              - targets:
+                  - prometheus-test-federate.monitoring.svc:443
+                labels:
+                  cluster: test-home

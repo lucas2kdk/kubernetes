@@ -1,0 +1,21 @@
+# Tailscale egress: gives prod's in-cluster Prometheus a ClusterIP that proxies
+# to test-home's tailnet Prometheus (prometheus-test.<tailnet>.ts.net). The
+# operator watches this annotation, joins the tailnet target, and binds it to
+# this Service's ClusterIP — so the federate-test-home scrape job (in
+# kustomization.yaml) can target prometheus-test-federate.monitoring.svc:443
+# without the Prometheus pod itself being on the tailnet.
+# Requires the tailnet ACL to let prod's tag:k8s reach test's prometheus-test:443.
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-test-federate
+  namespace: monitoring
+  annotations:
+    tailscale.com/tailnet-fqdn: prometheus-test.${tailnet}.ts.net
+spec:
+  externalName: placeholder # required by the schema; the operator overwrites it
+  type: ExternalName
+  ports:
+    - name: https
+      port: 443
+      protocol: TCP
