@@ -125,6 +125,7 @@ jobs:
         uses: ./.github/actions/setup-tools
         with:
           kustomize: ${{ env.KUSTOMIZE_VERSION }}
+          kubeconform: ${{ env.KUBECONFORM_VERSION }}
           kyverno: ${{ env.KYVERNO_VERSION }}
 
       - name: Install PyYAML

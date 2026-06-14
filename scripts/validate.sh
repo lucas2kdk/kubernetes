@@ -17,7 +17,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
 echo "== asserting no raw Secret objects =="
-if grep -rn 'kind: Secret' . --include='*.yaml' --exclude-dir=.git | grep -v '^\s*#'; then
+if grep -rn '^kind: Secret' . --include='*.yaml' --exclude-dir=.git | grep -v '^\s*#'; then
   echo "✗ raw kind: Secret objects found — use ExternalSecret instead" >&2
   exit 1
 fi

@@ -18,6 +18,12 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
+if command -v kustomize >/dev/null 2>&1; then
+  build() { kustomize build "$1" --load-restrictor LoadRestrictionsNone; }
+else
+  build() { kubectl kustomize "$1" --load-restrictor LoadRestrictionsNone; }
+fi
+
 clusters=(
   clusters/prod-fsn
   clusters/test-home
@@ -34,7 +40,7 @@ for cluster_dir in "${clusters[@]}"; do
 
   rendered="$tmp/$cluster_name.yaml"
   echo "→ building $cluster_dir..."
-  if ! kustomize build "$cluster_dir" > "$rendered" 2>/dev/null; then
+  if ! build "$cluster_dir" > "$rendered" 2>/dev/null; then
     echo "✗ FAIL: kustomize build $cluster_dir failed" >&2
     overall_fail=1
     echo
