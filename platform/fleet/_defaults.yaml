@@ -13,7 +13,7 @@ spec:
   retryInterval: 2m
   timeout: 5m
   sourceRef:
-    kind: GitRepository
-    name: flux-system
+    kind: OCIRepository
+    name: platform
   prune: true
   wait: true

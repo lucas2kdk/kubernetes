@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: platform-version
+  namespace: flux-system
+data:
+  # ponytail: CI overwrites this value with sed before flux push artifact — 0.0.0 is the in-repo sentinel
+  version: "0.0.0"

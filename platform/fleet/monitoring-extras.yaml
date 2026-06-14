@@ -5,7 +5,7 @@ metadata:
   name: monitoring-extras
   namespace: flux-system
 spec:
-  path: ./platform/base/monitoring-extras
+  path: ./base/monitoring-extras
   dependsOn:
     # Ships ServiceMonitors/PrometheusRules — needs the Prometheus-Operator CRDs first.
     - name: kube-prometheus-stack

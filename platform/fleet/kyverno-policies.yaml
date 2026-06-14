@@ -5,7 +5,7 @@ metadata:
   name: kyverno-policies
   namespace: flux-system
 spec:
-  path: ./platform/base/policies
+  path: ./base/policies
   dependsOn:
     # ClusterPolicy is a Kyverno CRD — the controller must be installed first.
     - name: kyverno

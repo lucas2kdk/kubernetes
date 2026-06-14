@@ -5,7 +5,7 @@ metadata:
   name: policy-reporter
   namespace: flux-system
 spec:
-  path: ./platform/base/policy-reporter
+  path: ./base/policy-reporter
   dependsOn:
     # Consumes the PolicyReport CRs Kyverno produces, so Kyverno comes first.
     - name: kyverno

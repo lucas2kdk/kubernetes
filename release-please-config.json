@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "simple",
+  "tag-separator": "/",
+  "packages": {
+    "platform": {
+      "release-type": "simple",
+      "component": "platform",
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}

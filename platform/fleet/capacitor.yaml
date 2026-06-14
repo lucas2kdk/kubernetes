@@ -5,4 +5,4 @@ metadata:
   name: capacitor
   namespace: flux-system
 spec:
-  path: ./platform/base/capacitor
+  path: ./base/capacitor

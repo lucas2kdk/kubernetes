@@ -5,7 +5,7 @@ metadata:
   name: tsidp
   namespace: flux-system
 spec:
-  path: ./platform/base/tsidp
+  path: ./base/tsidp
   dependsOn:
     # Reads its tailnet auth secret from Vault, so the store must exist first.
     - name: external-secrets-stores

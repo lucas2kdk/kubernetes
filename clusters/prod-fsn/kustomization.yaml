@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - flux-system # Flux bootstrap (GitRepository + flux-system Kustomization); generated, do not hand-edit
   - cluster-vars.yaml # cluster_name=prod-fsn, substituted into base ${cluster_name} tokens
+  - platform-source.yaml # OCIRepository pinning the versioned platform artifact
   - ../../platform/fleet/fleet-vars.yaml # fleet-wide ${tailnet}; referenced directly, not part of platform/fleet aggregate
   - tenants.yaml # per-cluster tenants Kustomization (spec.path can't be substituted, so it lives here not in fleet/)
   - ../../platform/fleet # the whole reconcile graph (all components + dependsOn), referenced not copied

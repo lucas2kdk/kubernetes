@@ -5,7 +5,7 @@ metadata:
   name: tailscale-operator
   namespace: flux-system
 spec:
-  path: ./platform/base/tailscale-operator
+  path: ./base/tailscale-operator
   dependsOn:
     # Reads its OAuth client creds from Vault, so the store must exist first.
     - name: external-secrets-stores

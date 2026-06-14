@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-platform-version
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "Platform"
+data:
+  platform-version.json: |
+    {
+      "title": "Platform Version",
+      "uid": "platform-version",
+      "schemaVersion": 38,
+      "refresh": "5m",
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Platform Version",
+          "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+          "options": {
+            "reduceOptions": { "calcs": ["lastNotNull"] },
+            "textMode": "value",
+            "colorMode": "none"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "displayName": "${__series.labels.version}",
+              "mappings": [{ "type": "value", "options": { "1": { "text": "${__series.labels.version}" } } }]
+            }
+          },
+          "targets": [
+            {
+              "datasource": { "type": "prometheus" },
+              "expr": "platform_build_info",
+              "legendFormat": "{{version}}"
+            }
+          ]
+        }
+      ]
+    }

@@ -55,6 +55,10 @@ import sys, yaml
 # CR (deduped). Filters: only Flux kustomize.toolkit kind: Kustomization (skip the
 # kustomize build-config kind of the same name), and skip flux-system (its path is
 # the cluster dir itself — rendering it would re-emit these very CRs).
+#
+# OCIRepository note: fleet Kustomizations sourced from OCIRepository "platform"
+# use paths relative to the artifact root (platform/). In the repo, those paths
+# live under platform/, so prefix them with "platform/" for the local build.
 seen = set()
 for d in yaml.safe_load_all(open(sys.argv[1])):
     if not isinstance(d, dict):
@@ -65,9 +69,15 @@ for d in yaml.safe_load_all(open(sys.argv[1])):
         continue
     if d.get("metadata", {}).get("name") == "flux-system":
         continue
-    path = ((d.get("spec") or {}).get("path") or "").strip()
+    spec = d.get("spec") or {}
+    path = (spec.get("path") or "").strip()
     if path.startswith("./"):
         path = path[2:]
+    # If sourced from the platform OCI artifact, the path is relative to
+    # platform/ in the repo.
+    sr = spec.get("sourceRef") or {}
+    if sr.get("kind") == "OCIRepository" and sr.get("name") == "platform":
+        path = "platform/" + path
     if path and path not in seen:
         seen.add(path)
         print(path)
