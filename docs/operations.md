@@ -97,18 +97,26 @@ lists them.
 
 | Recipe | What it runs | Underlying script | Tooling | A failure means |
 |--------|--------------|-------------------|---------|-----------------|
-| `just validate` | Builds every `kustomization.yaml` the way Flux does and schema-checks the output, plus the cluster Flux Kustomization CRs under `clusters/`. | `scripts/validate.sh` | `kustomize` (or `kubectl`), `kubeconform` | a `kustomize build` error, a `kubeconform` schema violation (malformed/typo'd manifest, rejected under `-strict`), **or** discovery found zero targets (repo layout moved / wrong CWD — fails rather than report a green 0/0). |
-| `just policy` | Renders the manifests each cluster reconciles, runs `kyverno apply` against them (Enforce fails, Audit warns), then the `tests/policy/` unit tests, then guards the `longhorn-system` baseline-CNP exclusion. | `scripts/policy-check.sh` | `kustomize`, `kyverno`, `python3` | an Enforce-mode violation, a `ClusterPolicy` that won't parse/compile, a failing `tests/policy/` fixture, **or** `generate-baseline-netpol` leaking a baseline CNP into `longhorn-system`. |
-| `just namespaces` | Checks the four platform-namespace exclusion lists are set-identical (the drift guard). | `scripts/check-namespace-lists.sh` | `yq` or `python3` | the four lists diverged — it names exactly which namespace is missing from / extra in which file. See [networking](networking.md). |
-| `just secrets` | Scans the working tree for committed secrets: `gitleaks dir . --no-banner --redact --verbose`. | (inline) | `gitleaks` | a secret pattern matched in the tree. See [secrets-and-identity](secrets-and-identity.md). |
-| `just lint` | Lints the GitHub Actions workflows: `actionlint`. | (inline) | `actionlint` | invalid workflow YAML, expression syntax, or a shellcheck finding in a `run:` block. |
+| `just no-secrets-objects` | Greps for top-level `kind: Secret` objects in the repo tree. | (inline) | (none) | a raw Secret is committed — use ExternalSecret instead. |
+| `just validate` | Builds every `kustomization.yaml` the way Flux does and schema-checks the output; asserts CRD-shipping HelmReleases have `crds: CreateReplace` and no `failurePolicy: Ignore`. | `scripts/validate.sh` | `kustomize` (or `kubectl`), `kubeconform` | a build error, a schema violation, a missing `crds: CreateReplace`, **or** zero targets found (wrong CWD). |
+| `just policy` | Renders the manifests each cluster reconciles, runs `kyverno apply`, then `tests/policy/` unit tests, then validates the generated baseline CNP schema. | `scripts/policy-check.sh` | `kustomize`, `kubeconform`, `kyverno`, `python3` | an Enforce-mode violation, a failing unit-test fixture, or `generate-baseline-netpol` leaking into `longhorn-system`. |
+| `just namespaces` | Checks the four lockstep platform-namespace exclusion lists are set-identical, and that all NotIn network-policy files are covered. | `scripts/check-namespace-lists.sh` | `yq` or `python3` | the four lists diverged, or a new NotIn file was added without registering it in the script. See [networking](networking.md). |
+| `just secrets` | Scans the working tree for committed secrets (`gitleaks`). | (inline) | `gitleaks` | a secret pattern matched in the tree. |
+| `just lint` | Lints the GitHub Actions workflow files (`actionlint`). | (inline) | `actionlint` | invalid workflow YAML, expression syntax, or a shellcheck finding in a `run:` block. |
+| `just collisions` | Checks no two Flux Kustomizations share the same `(namespace, name)` pair per cluster. | `scripts/check-kustomization-collisions.sh` | `kustomize`, `python3` | a duplicate Kustomization would shadow or conflict with another. |
+| `just dependson` | Verifies every `spec.dependsOn[].name` resolves to an actual Kustomization in the same cluster's built output. | `scripts/check-dependson.sh` | `kustomize`, `python3` | a `dependsOn` entry points at a non-existent Kustomization — ordering guarantee is broken. |
+| `just check-rbac` | Asserts no `Role`/`ClusterRole` grants `bind`, `escalate`, `impersonate`, or `serviceaccounts/token` create. | `scripts/check-rbac.sh` | `kustomize`, `python3` | a forbidden RBAC privilege exists in the tree. |
+| `just check-issuers` | Every `Certificate` issuerRef resolves to a `ClusterIssuer`/`Issuer` in the same cluster build; ACME production issuers use DNS-01 only. | `scripts/check-issuers.sh` | `kustomize`, `python3` | a Certificate points at a non-existent issuer, or an HTTP-01 solver is used on a production ACME issuer. |
+| `just check-secret-stores` | Every `ExternalSecret` `secretStoreRef` resolves to a `ClusterSecretStore`/`SecretStore` in the same cluster build. | `scripts/check-secret-stores.sh` | `kustomize`, `python3` | an ExternalSecret would fail to sync because its store doesn't exist. |
+| `just image-digests` | All directly-authored container images in `platform/base/tsidp/` are pinned to `@sha256:` digests (not mutable tags). | `scripts/check-image-digests.sh` | (grep) | a mutable tag — rebuild attack surface, non-reproducible deploys. |
+| `just sources` _(post-merge)_ | Verifies every Flux source object is consumed by at least one workload, and every consumer `sourceRef` points at a declared source. | `scripts/check-source-coherence.sh` | `kustomize`, `python3` | an orphaned source (noise in Flux logs) or a dead `sourceRef` (component silently fails to reconcile). |
+| `just parity` _(post-merge)_ | Checks no cluster references Flux Kustomizations not declared in `platform/fleet/` (undeclared additions bypass fleet lifecycle). | `scripts/check-cluster-parity.sh` | `kustomize`, `python3` | a cluster has a platform component outside the fleet governance model. |
 
 ```bash
-just check     # validate + policy + namespaces + secrets + lint  (the full PR gate)
+just check     # full PR gate: no-secrets-objects secrets namespaces validate policy lint collisions dependson check-rbac check-issuers check-secret-stores image-digests
 ```
 
-`just check` runs all five recipes and fails if any sub-recipe fails — this is
-exactly what CI runs on a pull request.
+`just check` runs all twelve recipes and fails on the first sub-recipe failure — this is exactly what CI runs on a pull request. `sources` and `parity` run post-merge (on push to `main`) because they require the full built output across both clusters and are slower than the PR checks.
 
 ### `just scan` — weekly CVE scan, NOT a gate
 
@@ -140,26 +148,86 @@ template are reported, not skipped silently, so coverage gaps stay visible.
 
 ### `.github/workflows/pull-request.yaml` — the PR gate
 
-Triggered on `pull_request` to `main`. Five independent jobs — `validate`,
-`policy`, `secrets`, `namespaces`, `lint` — one per `just check` recipe, so they
-run in **parallel** and a failure points at one check.
+Triggered on `pull_request` to `main`. Structured as **two tiers** so cheap
+filesystem-only checks fail fast before the heavier static-analysis jobs start.
 
-- **Least privilege:** `permissions: contents: read` — the checks only read the
-  tree, no write scopes.
-- **Per-branch concurrency:** `group: ${{ github.workflow }}-${{ github.ref }}`
-  with `cancel-in-progress: true` — one in-flight run per branch; a new push
-  cancels the superseded run so the PR isn't gated on stale commits.
-- **Shared setup:** every job installs only the tools it needs via the composite
-  action `./.github/actions/setup-tools` (one place for the pinned install
-  steps instead of per-job `curl` blocks). The `namespaces` job needs no
-  setup-tools step (only `yq`/`python3`, preinstalled). The `policy` and `scan`
-  jobs additionally `pip install pyyaml`.
-- **Version pins** live in the workflow `env:` block with `# renovate:`
-  annotations and are passed into setup-tools as inputs — keep them in the
-  workflow, not in the action, or Renovate stops tracking them. Current pins:
-  `KUSTOMIZE_VERSION=5.8.1`, `KUBECONFORM_VERSION=0.8.0`,
-  `KYVERNO_VERSION=1.18.1`, `GITLEAKS_VERSION=8.30.1`,
-  `ACTIONLINT_VERSION=1.7.12`.
+**Tier 1 — fast-fail, filesystem-only (no tool install):**
+
+| Job | Runs |
+|-----|------|
+| `secrets` | `just secrets` — gitleaks committed-secret scan |
+| `namespaces` | `just namespaces` — exclusion-list drift guard |
+| `no-secrets-objects` | `just no-secrets-objects` — raw Secret object grep |
+
+**Tier 2 — static analysis (`needs: [secrets, namespaces, no-secrets-objects]`):**
+
+| Job | Runs |
+|-----|------|
+| `validate` | `just validate` — kustomize build + kubeconform schema |
+| `policy` | `just policy` — kyverno apply + unit tests + CNP schema |
+| `lint` | `just lint` — actionlint workflow lint |
+| `check-rbac` | `just check-rbac` — forbidden RBAC verb check |
+| `check-issuers` | `just check-issuers` — Certificate issuerRef resolution |
+| `check-dependson` | `just dependson` — dependsOn reference resolution |
+| `check-secret-stores` | `just check-secret-stores` — ExternalSecret store resolution |
+| `image-digests` | `just image-digests` — immutable image digest pin check |
+| `collisions` | `just collisions` — Kustomization name collision check |
+
+Two jobs are **commented out** pending authored PrometheusRules / Grafana dashboards (tracked as tasks #1–5):
+- `check-alerts` (`just check-alerts`) — asserts Watchdog, Flux, Kyverno, cert-expiry alert rules exist
+- `check-dashboards` (`just check-dashboards`) — asserts required Grafana dashboards exist
+
+**Pipeline properties:**
+
+- **Least privilege:** `permissions: contents: read` — checks only read the tree.
+- **Per-branch concurrency:** `cancel-in-progress: true` — a new push cancels the superseded run.
+- **Shared setup:** every job installs only what it needs via `.github/actions/setup-tools` (one place for pinned install steps). Jobs that parse YAML do `pip install pyyaml`.
+- **Version pins** live in the workflow `env:` block with `# renovate:` annotations. Current pins: `KUSTOMIZE_VERSION=5.8.1`, `KUBECONFORM_VERSION=0.8.0`, `KYVERNO_VERSION=1.18.1`, `GITLEAKS_VERSION=8.30.1`, `ACTIONLINT_VERSION=1.7.12`.
+
+### `.github/workflows/post-merge.yaml` — post-merge checks
+
+Triggered on every push to `main`. Runs two checks that are too slow or
+require full cluster context to run as PR gates:
+
+| Job | Runs | Why not a PR gate |
+|-----|------|-------------------|
+| `sources` | `just sources` — orphaned source / dead `sourceRef` check | Requires building the entire repo in one pass (all clusters + raw `flux-system` YAMLs) to cross-reference sources against consumers. |
+| `parity` | `just parity` — cluster vs fleet comparison | Requires building `platform/fleet/` and each cluster independently to compare sets — heavier than a single `kustomize build`. |
+
+Both jobs run in parallel with `cancel-in-progress: true`. A failure here means
+a change landed on `main` that either introduced an orphaned Flux source or a
+Kustomization outside the fleet governance model — it should be followed by a
+quick fix PR.
+
+### `.github/workflows/drift-detection.yaml` — nightly live-cluster drift check
+
+Triggered nightly at **02:00 UTC** (plus `workflow_dispatch` for on-demand
+runs). Checks that all Flux resources across both clusters are in `Ready` state,
+catching cases where a cluster has reconciled successfully but something has
+since drifted (e.g. a manually deleted resource, a CRD version mismatch, or a
+network partition that resolved without triggering a reconcile).
+
+| Job | Cluster | Secret required |
+|-----|---------|----------------|
+| `drift-prod-fsn` | prod-fsn | `KUBECONFIG_PROD_FSN` |
+| `drift-test-home` | test-home | `KUBECONFIG_TEST_HOME` |
+
+**Setup:** each job reads a base64-encoded kubeconfig from a GitHub Actions
+secret. If the secret is absent, the job emits a warning and exits 0 — it
+never blocks unrelated work during initial setup. To configure:
+
+```bash
+# generate a read-only kubeconfig (recommend a ServiceAccount with a read-only ClusterRole)
+kubectl config view --minify --flatten | base64 -w0
+# paste the output into:
+#   GitHub repo → Settings → Secrets and variables → Actions → New repository secret
+#   name: KUBECONFIG_PROD_FSN   (or KUBECONFIG_TEST_HOME)
+```
+
+`flux get all -A --status-selector ready=false` is run against each cluster;
+any output (non-ready resources) exits non-zero and fails the job with an error
+annotation. Uses the latest stable Flux CLI (installed via
+`fluxcd.io/install.sh`).
 
 ### `.github/workflows/image-scan.yaml` — weekly image CVE scan
 

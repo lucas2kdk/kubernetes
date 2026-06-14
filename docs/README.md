@@ -23,7 +23,8 @@ it runs.
 | [policies.md](policies.md) | The Kyverno `ClusterPolicy` set, the flux-multi-tenancy guardrail, pod-security rules, baseline NetworkPolicy generation, and the policy unit tests. |
 | [secrets-and-identity.md](secrets-and-identity.md) | External Secrets Operator → Vault, the `ClusterSecretStore`, the Tailscale OIDC issuer (tsidp), and the Headlamp/Grafana login model. |
 | [monitoring.md](monitoring.md) | kube-prometheus-stack, the bundled dashboards, ServiceMonitors/PodMonitors, and the Alertmanager routing + platform alert rules. |
-| [operations.md](operations.md) | Day-2 operations — bootstrap, reconcile, validation (`just check`), adding clusters/components, and access. |
+| [operations.md](operations.md) | Day-2 operations — bootstrap, reconcile, the full `just check` gate (12 recipes), the two-tier PR pipeline, post-merge and drift-detection workflows, adding clusters/components, and access. |
+| [testing-strategy.md](testing-strategy.md) | BDD/TDD test strategy — the full catalogue of 29 test cases (structural coherence, policy gaps, security, observability), their CI tier, implementation status, and the rot-prone patterns to avoid. |
 | [tools.md](tools.md) | The local tooling (`just`, `kustomize`, `kubeconform`, `kyverno`, `gitleaks`, `trivy`, …) the validation recipes use. |
 
 ## How this fits together
