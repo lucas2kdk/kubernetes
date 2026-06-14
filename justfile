@@ -89,3 +89,4 @@ check-rules:
 # Advisory kube-score pass over rendered prod-fsn manifests (non-blocking)
 score:
     kustomize build clusters/prod-fsn --load-restrictor LoadRestrictionsNone | kube-score score -
+
