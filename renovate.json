@@ -39,12 +39,23 @@
     },
     {
       "customType": "regex",
-      "description": "tsidp runs as a plain Deployment (not a HelmRelease), so the flux/helm-values managers don't see its image tag. Track it directly against the ghcr.io image.",
+      "description": "tsidp runs as a plain Deployment (not a HelmRelease), so the flux/helm-values managers don't see its image. Images are pinned as tag@sha256: digest for immutability; Renovate matches the tag and updates both tag and digest together.",
       "managerFilePatterns": [
         "/^platform/base/tsidp/deployment\\.yaml$/"
       ],
       "matchStrings": [
-        "image: (?<depName>ghcr\\.io/tailscale/tsidp):(?<currentValue>\\S+)"
+        "image: (?<depName>ghcr\\.io/tailscale/tsidp):(?<currentValue>[^@\\s]+)@sha256:[a-f0-9]+"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "busybox init container in tsidp/deployment.yaml — not a HelmRelease, tracked manually. Pinned as tag@sha256: for immutability.",
+      "managerFilePatterns": [
+        "/^platform/base/tsidp/deployment\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image: (?<depName>busybox):(?<currentValue>[^@\\s]+)@sha256:[a-f0-9]+"
       ],
       "datasourceTemplate": "docker"
     },
