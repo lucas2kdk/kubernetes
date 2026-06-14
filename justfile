@@ -32,7 +32,7 @@ scan:
 
 # Assert no raw kind: Secret objects exist in the repo
 no-secrets-objects:
-    @! grep -rn 'kind: Secret' . --include='*.yaml' --exclude-dir=.git | grep -v '^\s*#'
+    @! grep -rn '^kind: Secret' . --include='*.yaml' --exclude-dir=.git | grep -v '^\s*#'
 
 # Verify every Flux source is consumed by at least one workload
 sources:
