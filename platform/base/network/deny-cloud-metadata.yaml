@@ -1,3 +1,14 @@
+# ============================================================================
+# NAMESPACE EXCLUSION LIST — ONE OF FOUR THAT MUST STAY SET-IDENTICAL.
+# The NotIn `values:` list below is one of the four platform-namespace exclusion
+# lists kept in lockstep (the other three: default-deny.yaml,
+# allow-ingress-from-traefik.yaml, and policies/generate-baseline-netpol.yaml),
+# enforced by scripts/check-namespace-lists.sh (`just namespaces`, PR gate).
+# Add a platform namespace to all four by hand.
+#
+# longhorn-system MUST stay excluded here too: see the inline comment on its
+# entry below and the 2026-06-12 CSI outage (the drift the guard now prevents).
+# ============================================================================
 apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
 metadata:

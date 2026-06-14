@@ -1,3 +1,6 @@
+# Traefik ingress controller base. ClusterIP-only today (no LB/public exposure
+# on bare metal yet); dependsOn cert-manager in the fleet graph for the eventual
+# TLS story. Note: Headlamp/Grafana are reached over the tailnet, not Traefik.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

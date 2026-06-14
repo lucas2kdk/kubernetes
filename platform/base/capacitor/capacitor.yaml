@@ -1,3 +1,10 @@
+# Capacitor — the Flux GitOps dashboard UI (gimlet-io). A read-only web view of
+# the cluster's Flux objects (Kustomizations, HelmReleases, sources) and their
+# reconcile status, useful for debugging the fleet's dependsOn graph.
+#
+# Self-managing: instead of a HelmRelease in a base, this pulls the upstream
+# OCI-packaged manifests and reconciles them with a nested Flux Kustomization
+# (path "./") into flux-system. semver ">=0.1.0" tracks the latest published tag.
 ---
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository

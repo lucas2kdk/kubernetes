@@ -1,3 +1,6 @@
+# Per-cluster tenants Flux Kustomization for test-home, pointing at
+# tenants/overlays/test-home. Kept per cluster (not in platform/fleet/) because
+# a Flux Kustomization's spec.path can't be ${var}-substituted per cluster.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -12,4 +15,4 @@ spec:
     name: flux-system
   path: ./tenants/overlays/test-home
   prune: true
-  wait: true
+  wait: true # block dependents until tenant apps are Ready

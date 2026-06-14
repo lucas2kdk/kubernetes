@@ -1,14 +1,19 @@
 # test-home runs a subset of the fleet (external-secrets, tailscale-operator) plus its own AppRole external-secrets-stores override.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+# Unlike prod-fsn this lists individual fleet files instead of referencing the
+# whole platform/fleet directory — test-home deliberately runs only this subset.
 resources:
-  - flux-system
-  - cluster-vars.yaml
+  - flux-system # Flux bootstrap; generated, do not hand-edit
+  - cluster-vars.yaml # cluster_name=test-home, substituted into base ${cluster_name} tokens
   - ../../platform/fleet/capacitor.yaml
   - ../../platform/fleet/external-secrets.yaml
   - ../../platform/fleet/tailscale-operator.yaml
-  - external-secrets-stores.yaml
+  - external-secrets-stores.yaml # local AppRole override, NOT the shared fleet/external-secrets-stores.yaml (see file header)
   - tenants.yaml
+# platform/fleet/kustomization.yaml applies _defaults.yaml to the whole-fleet
+# set; this cluster picks files individually so it must re-apply the same patch
+# itself, otherwise these Kustomizations lack interval/sourceRef/prune/wait.
 patches:
   - path: ../../platform/fleet/_defaults.yaml
     target:

@@ -93,6 +93,9 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 # Collect the sorted, unique namespace set for every file, keyed by file path.
+# slug() turns a path into a flat filename (/ -> -) so each file's set can live as
+# a sibling temp file without nested dirs; sets are sorted so `diff`/`comm` below
+# compare them as sets, not as ordered lists.
 slug() { printf '%s' "${1//\//-}"; }
 
 files=("${cilium_files[@]}" "$kyverno_file")

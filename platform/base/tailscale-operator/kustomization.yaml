@@ -1,3 +1,7 @@
+# Tailscale operator base: runs the API-server proxy in auth mode (k8s-api-${cluster_name}),
+# pulls its OAuth client from Vault (external-secret.yaml -> operator-oauth Secret),
+# and binds the tailnet `maintainers` group to curated RBAC (rbac-maintainers.yaml).
+# dependsOn external-secrets-stores in the fleet graph so the OAuth Secret exists first.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

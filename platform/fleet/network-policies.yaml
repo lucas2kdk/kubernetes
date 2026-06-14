@@ -1,3 +1,6 @@
+# Cilium cluster-wide default-deny (+ cloud-metadata / Traefik-ingress policies).
+# A reconcile root: no dependsOn, but needs the Cilium CRDs that Terraform
+# installs out-of-band (Cilium is not managed by this repo).
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:

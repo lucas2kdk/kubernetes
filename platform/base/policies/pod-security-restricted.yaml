@@ -21,12 +21,16 @@ spec:
                 - Pod
       exclude:
         any:
+          # Non-repo-managed system namespaces (no namespace.yaml here to label),
+          # so they stay an explicit list — same set as flux-multi-tenancy.
           - resources:
               namespaces:
                 - kube-system
                 - kube-node-lease
                 - kube-public
                 - flux-system
+          # Platform-managed namespaces carry the platform.io/managed label
+          # (set on each platform/base/*/namespace.yaml).
           - resources:
               namespaceSelector:
                 matchLabels:

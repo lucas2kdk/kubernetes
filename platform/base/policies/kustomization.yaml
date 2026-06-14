@@ -1,3 +1,8 @@
+# The Kyverno ClusterPolicy set — the tenant-facing guardrails. Reconciled by
+# platform/fleet/kyverno-policies.yaml (dependsOn: kyverno, so the CRDs and webhook
+# exist first). flux-multi-tenancy is Enforce; the Tier-1 baseline policies below
+# are Audit until reports are clean. generate-baseline-netpol + its RBAC restore
+# minimal connectivity under the Cilium default-deny.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

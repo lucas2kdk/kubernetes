@@ -1,3 +1,9 @@
+# Cilium cluster-wide network policy base (the `network-policies` fleet
+# Kustomization, a root with no dependsOn — but it needs the Cilium CRDs, which
+# Terraform installs out-of-band). default-deny is the foundation; the allow-*
+# policies are additive grants on top; deny-cloud-metadata is an anti-SSRF guard.
+# All four scope to workload namespaces via a shared NotIn exclusion list (three
+# of these files are guarded for lockstep — see their headers).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

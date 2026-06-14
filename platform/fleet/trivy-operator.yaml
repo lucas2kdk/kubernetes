@@ -1,3 +1,4 @@
+# Trivy operator — weekly CIS benchmark + vuln/config-audit/RBAC scan reports.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -6,4 +7,5 @@ metadata:
 spec:
   path: ./platform/base/trivy-operator
   dependsOn:
+    # Ships a ServiceMonitor, which needs the Prometheus-Operator CRDs first.
     - name: kube-prometheus-stack

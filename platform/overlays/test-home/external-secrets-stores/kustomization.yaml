@@ -1,3 +1,6 @@
+# test-home's structural overlay over the external-secrets-stores base — the
+# fleet's one remaining overlay (per-cluster STRUCTURE, not a value swap, so it
+# can't be a ${var}). Reconciled by clusters/test-home/external-secrets-stores.yaml.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

@@ -1,5 +1,9 @@
 name: Renovate
 
+# Self-hosted Renovate runner. Renovate opens/updates dependency PRs against this
+# repo using its own config (renovate.json). Two triggers: manual (with dry-run +
+# log-level inputs) and an hourly schedule that just wakes Renovate so it can honour
+# the real cadence set in renovate.json's `schedule` field.
 on:
   # Manual trigger from the Actions tab. dryRun lets you preview without
   # opening PRs.
@@ -18,10 +22,12 @@ on:
         type: boolean
   # Self-scheduled. The actual update cadence is controlled by the `schedule`
   # field in renovate.json; this just wakes Renovate up often enough to honour
-  # it.
+  # it. cron "0 * * * *" = top of every hour.
   schedule:
     - cron: "0 * * * *"
 
+# Serialize Renovate runs (group has no ref, so it's repo-global) and never cancel
+# an in-flight run — Renovate's git operations shouldn't be interrupted mid-flight.
 concurrency:
   group: renovate
   cancel-in-progress: false
@@ -36,12 +42,15 @@ jobs:
       - name: Renovate
         uses: renovatebot/github-action@v46.1.15
         with:
+          # PAT with PR/contents write — Renovate authors branches and PRs as this token.
           token: ${{ secrets.RENOVATE_TOKEN }}
         env:
           LOG_LEVEL: ${{ inputs.logLevel || 'info' }}
+          # dryRun input → 'full' (preview, no branches/PRs) when set, else live.
           RENOVATE_DRY_RUN: ${{ inputs.dryRun && 'full' || '' }}
           RENOVATE_REPOSITORIES: ${{ github.repository }}
           RENOVATE_PLATFORM: github
-          # Use the repo's renovate.json instead of an org preset.
+          # Skip the onboarding PR and require an in-repo config: use this repo's
+          # renovate.json as the single source of truth, not an org preset.
           RENOVATE_ONBOARDING: "false"
           RENOVATE_REQUIRE_CONFIG: "required"

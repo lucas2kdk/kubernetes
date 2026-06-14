@@ -1,3 +1,6 @@
+# platform.io/managed: "true" exempts this namespace from the tenant guardrails
+# (Kyverno admission policies + Cilium default-deny — see README "Platform
+# namespace convention"; update the Cilium NotIn lists by hand too).
 # PSA privileged: tsidp persists tailnet + OIDC-client state on a hostPath
 # (no CSI on bare-metal Talos yet), which "baseline" enforcement rejects.
 apiVersion: v1

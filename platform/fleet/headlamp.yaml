@@ -1,3 +1,4 @@
+# Headlamp dashboard (tsidp-OIDC login, reached over the tailnet).
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -6,6 +7,7 @@ metadata:
 spec:
   path: ./platform/base/headlamp
   dependsOn:
+    # Reads its OIDC client secret from Vault, so the store must exist first.
     - name: external-secrets-stores
   postBuild:
     substituteFrom:

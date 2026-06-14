@@ -1,3 +1,6 @@
+# Tenant base — the full set of tenant apps. Per-cluster overlays
+# (tenants/overlays/<cluster>) build on this; each cluster's tenants Flux
+# Kustomization (clusters/<cluster>/tenants.yaml) points at its overlay.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:

@@ -1,3 +1,6 @@
+# Namespace for Policy Reporter. platform.io/managed exempts it from the Kyverno
+# pod policies; its Cilium default-deny exemption is handled by the explicit
+# policy-reporter entry in the four network NotIn lists.
 apiVersion: v1
 kind: Namespace
 metadata:
