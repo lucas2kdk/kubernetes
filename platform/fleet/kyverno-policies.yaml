@@ -6,6 +6,16 @@ metadata:
   namespace: flux-system
 spec:
   path: ./base/policies
+  # generate-baseline-netpol's exclude `names:` list is part of a Kyverno
+  # generate rule, whose spec Kyverno treats as immutable — so every time that
+  # list changes (it's one of the four namespace-exclusion lists, edited on every
+  # new platform component) a normal apply is rejected with "changes of immutable
+  # fields of a rule spec in a generate rule is disallowed", forcing a manual
+  # `kubectl delete clusterpolicy`. force lets Flux recreate on that specific
+  # conflict automatically. It only kicks in when a patch fails on an immutable
+  # field, not on every reconcile; the brief regenerate window matches the manual
+  # delete it replaces.
+  force: true
   dependsOn:
     # ClusterPolicy is a Kyverno CRD — the controller must be installed first.
     - name: kyverno
