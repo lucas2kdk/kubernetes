@@ -8,4 +8,4 @@ spec:
   url: oci://ghcr.io/lucas2kdk/platform
   ref:
     # ponytail: this is THE version pin — bump it in a PR to promote test-home
-    tag: "1.0.0"
+    tag: "1.1.0"
