@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.1.1...platform/v1.2.0) (2026-06-14)
+
+
+### Features
+
+* **monitoring:** make Grafana dashboards multi-cluster aware ([#38](https://github.com/lucas2kdk/kubernetes/issues/38)) ([fa35c20](https://github.com/lucas2kdk/kubernetes/commit/fa35c20dd49d0a67b90934cc5e169245ff031b00))
+
 ## [1.1.1](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.1.0...platform/v1.1.1) (2026-06-14)
 
 
