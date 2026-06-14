@@ -1,0 +1,29 @@
+# test-home runs a Grafana-less kube-prometheus-stack: structural diff (whole
+# resources removed), so it points at the overlay instead of the shared base
+# (spec.path can't be substituted). Keeps the name "kube-prometheus-stack" so the
+# fleet dependsOn edges (kyverno/trivy-operator/monitoring-extras) still bind.
+# Spec is written out in full (like external-secrets-stores.yaml) because the
+# cluster CRs are schema-checked as raw files, before this cluster's
+# _defaults.yaml patch is applied.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: kube-prometheus-stack
+  namespace: flux-system
+spec:
+  # A reconcile root (installs the Prometheus-Operator CRDs the monitor-shipping
+  # components wait on); no dependsOn, same as the fleet file.
+  interval: 1h
+  retryInterval: 2m
+  timeout: 5m
+  sourceRef:
+    kind: OCIRepository
+    name: platform
+  path: ./overlays/test-home/kube-prometheus-stack
+  prune: true
+  wait: true
+  postBuild:
+    substituteFrom:
+      # ${tailnet} -> the Prometheus tailnet ingress host (prometheus-test.<tailnet>).
+      - kind: ConfigMap
+        name: fleet-vars

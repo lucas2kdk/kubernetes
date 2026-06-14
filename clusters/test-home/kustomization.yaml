@@ -10,6 +10,15 @@ resources:
   - ../../platform/fleet/capacitor.yaml
   - ../../platform/fleet/external-secrets.yaml
   - ../../platform/fleet/tailscale-operator.yaml
+  - ../../platform/fleet/kyverno.yaml
+  - ../../platform/fleet/kyverno-policies.yaml
+  - ../../platform/fleet/policy-reporter.yaml
+  - ../../platform/fleet/trivy-operator.yaml
+  - ../../platform/fleet/network-policies.yaml
+  - ../../platform/fleet/platform-meta.yaml
+  - ../../platform/fleet/monitoring-extras.yaml
+  - ../../platform/fleet/fleet-vars.yaml # ${tailnet}, consumed by the kube-prometheus-stack CR below
+  - kube-prometheus-stack.yaml # per-cluster CR -> Grafana-less overlay (prod keeps the only Grafana)
   - external-secrets-stores.yaml # local AppRole override, NOT the shared fleet/external-secrets-stores.yaml (see file header)
   - tenants.yaml
 # platform/fleet/kustomization.yaml applies _defaults.yaml to the whole-fleet
