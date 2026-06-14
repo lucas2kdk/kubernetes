@@ -25,6 +25,42 @@ Adding a region is `flux bootstrap` (writes `flux-system/`) + a `cluster-vars.ya
 + a `kustomization.yaml` listing components — the reconcile graph is referenced,
 never copied.
 
+## Two sync sources: git `main` vs the OCI release
+
+A cluster does **not** reconcile everything from one place. There are two
+sources, and knowing which is which is what tells you whether an edit on `main`
+reaches the cluster:
+
+- **The bootstrap `GitRepository` (`flux-system`)** tracks `branch: main` and
+  reconciles `./clusters/<name>` every minute. This is the thin wiring layer.
+- **The `platform` `OCIRepository`** (defined in `clusters/<name>/platform-source.yaml`)
+  is pinned to a release tag, e.g. `1.0.0`. Every fleet `Kustomization` sources
+  from it, because `platform/fleet/_defaults.yaml` sets
+  `sourceRef: {kind: OCIRepository, name: platform}` on all of them and each
+  declares `path: ./base/<component>` — a path that resolves **inside the
+  artifact**, not in git.
+
+So the platform component manifests (`platform/base/**`) are **frozen at the
+pinned release** and only change when you cut a new release and bump the pin.
+Everything else still tracks `main` live:
+
+| You edit on `main`…                          | Reaches the cluster?                                   |
+| -------------------------------------------- | ------------------------------------------------------ |
+| `platform/base/**` (component manifests)     | **No** — frozen at the pinned tag until a new release  |
+| `platform/fleet/**` (graph / `dependsOn`)    | Yes (~1–10m) — the graph is read from git              |
+| `clusters/<name>/platform-source.yaml` (pin) | Yes — **this is how you promote** a new release        |
+| `cluster-vars.yaml`, `fleet-vars.yaml`       | Yes                                                    |
+| `tenants/**` (tenant workloads)              | Yes — `tenants.yaml` uses `sourceRef: GitRepository`, so tenants are git-tracked, not part of the release artifact |
+
+The release itself is cut by merging the release-please PR (tags
+`platform/v<x.y.z>`) and publishing the OCI artifact — see
+[the release pipeline](operations.md) and `.github/workflows/release.yaml`.
+
+**Per-cluster promotion.** Each cluster has its own `platform-source.yaml`, so
+the version pin is the per-cluster promotion lever: bump `test-home` to a new
+tag, soak it, then bump `prod-fsn`. If both files name the same tag they are in
+lockstep on that version (the default state right after a release).
+
 ## The per-cluster variation rule
 
 The single rule that governs where per-cluster differences live:
