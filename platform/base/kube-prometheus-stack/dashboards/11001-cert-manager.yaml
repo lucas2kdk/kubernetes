@@ -50,7 +50,10 @@ data:
             },
             {
                 "columns": [],
-                "datasource": "$Datasource",
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${datasource}"
+                },
                 "fontSize": "100%",
                 "gridPos": {
                     "h": 8,
@@ -130,7 +133,10 @@ data:
                 "cacheTimeout": null,
                 "dashLength": 10,
                 "dashes": false,
-                "datasource": "$Datasource",
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${datasource}"
+                },
                 "fill": 0,
                 "fillGradient": 0,
                 "gridPos": {
@@ -222,7 +228,10 @@ data:
                 "bars": false,
                 "dashLength": 10,
                 "dashes": false,
-                "datasource": "$Datasource",
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${datasource}"
+                },
                 "fill": 0,
                 "fillGradient": 0,
                 "gridPos": {
@@ -326,7 +335,10 @@ data:
                 "bars": false,
                 "dashLength": 10,
                 "dashes": false,
-                "datasource": "$Datasource",
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${datasource}"
+                },
                 "fill": 1,
                 "fillGradient": 0,
                 "gridPos": {
@@ -416,7 +428,10 @@ data:
                     "rgba(237, 129, 40, 0.89)",
                     "#d44a3a"
                 ],
-                "datasource": "$Datasource",
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${datasource}"
+                },
                 "format": "none",
                 "gauge": {
                     "maxValue": 100,
@@ -496,7 +511,10 @@ data:
                 "bars": false,
                 "dashLength": 10,
                 "dashes": false,
-                "datasource": "$Datasource",
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${datasource}"
+                },
                 "fill": 1,
                 "fillGradient": 0,
                 "gridPos": {
@@ -582,7 +600,10 @@ data:
                 "bars": false,
                 "dashLength": 10,
                 "dashes": false,
-                "datasource": "$Datasource",
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${datasource}"
+                },
                 "fill": 1,
                 "fillGradient": 0,
                 "gridPos": {
@@ -668,7 +689,10 @@ data:
                 "bars": false,
                 "dashLength": 10,
                 "dashes": false,
-                "datasource": "$Datasource",
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${datasource}"
+                },
                 "fill": 1,
                 "fillGradient": 0,
                 "gridPos": {
@@ -754,7 +778,10 @@ data:
                 "bars": false,
                 "dashLength": 10,
                 "dashes": false,
-                "datasource": "$Datasource",
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${datasource}"
+                },
                 "fill": 1,
                 "fillGradient": 0,
                 "gridPos": {
@@ -840,7 +867,10 @@ data:
                 "bars": false,
                 "dashLength": 10,
                 "dashes": false,
-                "datasource": "$Datasource",
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${datasource}"
+                },
                 "fill": 1,
                 "fillGradient": 0,
                 "gridPos": {
@@ -926,7 +956,10 @@ data:
                 "bars": false,
                 "dashLength": 10,
                 "dashes": false,
-                "datasource": "$Datasource",
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${datasource}"
+                },
                 "fill": 1,
                 "fillGradient": 0,
                 "gridPos": {
@@ -1012,7 +1045,10 @@ data:
                 "bars": false,
                 "dashLength": 10,
                 "dashes": false,
-                "datasource": "$Datasource",
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${datasource}"
+                },
                 "fill": 1,
                 "fillGradient": 0,
                 "gridPos": {
@@ -1098,7 +1134,10 @@ data:
                 "bars": false,
                 "dashLength": 10,
                 "dashes": false,
-                "datasource": "$Datasource",
+                "datasource": {
+                    "type": "prometheus",
+                    "uid": "${datasource}"
+                },
                 "fill": 1,
                 "fillGradient": 0,
                 "gridPos": {
@@ -1189,26 +1228,24 @@ data:
         "templating": {
             "list": [
                 {
-                    "current": {
-                        "text": "k8s-qa",
-                        "value": "k8s-qa"
-                    },
+                    "current": {},
                     "hide": 0,
                     "includeAll": false,
-                    "label": "Datasource",
-                    "multi": false,
-                    "name": "Datasource",
+                    "label": "Cluster",
+                    "name": "datasource",
                     "options": [],
                     "query": "prometheus",
                     "refresh": 1,
-                    "regex": "/k8s.*/",
-                    "skipUrlSync": false,
+                    "regex": "",
                     "type": "datasource"
                 },
                 {
                     "allValue": ".*",
                     "current": {},
-                    "datasource": "$Datasource",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${datasource}"
+                    },
                     "definition": "label_values(exported_namespace)",
                     "hide": 0,
                     "includeAll": true,
@@ -1230,7 +1267,10 @@ data:
                 {
                     "allValue": ".*",
                     "current": {},
-                    "datasource": "$Datasource",
+                    "datasource": {
+                        "type": "prometheus",
+                        "uid": "${datasource}"
+                    },
                     "definition": "label_values(certmanager_certificate_expiration_timestamp_seconds{exported_namespace=~\"$Namespace\"},name) ",
                     "hide": 0,
                     "includeAll": true,

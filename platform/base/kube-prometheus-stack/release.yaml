@@ -31,6 +31,11 @@ spec:
   values:
     grafana:
       enabled: true
+      # Drop the chart's bundled default dashboards: prod runs the only Grafana
+      # and federates test-home (cluster=test-home), so the chart defaults — which
+      # don't filter by cluster — mix both fleets' series into one panel. We ship
+      # our own curated dashboards via the sidecar (dashboards/ ConfigMaps) instead.
+      defaultDashboardsEnabled: false
       # SQLite state only — datasources and all dashboards are provisioned
       # (chart datasource + the sidecar below), so this stays tiny.
       persistence:

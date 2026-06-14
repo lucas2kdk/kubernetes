@@ -108,7 +108,7 @@ data:
                     {
                         "datasource": {
                             "type": "prometheus",
-                            "uid": "prometheus"
+                            "uid": "${datasource}"
                         },
                         "editorMode": "code",
                         "expr": "count(longhorn_volume_capacity_bytes{volume=~\"$volume\"}) OR on() vector(0)",
@@ -175,7 +175,7 @@ data:
                     {
                         "datasource": {
                             "type": "prometheus",
-                            "uid": "prometheus"
+                            "uid": "${datasource}"
                         },
                         "editorMode": "code",
                         "expr": "count(\r\n  (longhorn_volume_robustness{volume=~\"$volume\"} == 1)\r\n  or\r\n  (longhorn_volume_robustness{volume=~\"$volume\", robustness=\"healthy\"} == 1)\r\n) OR on() vector(0)",
@@ -280,7 +280,7 @@ data:
                     {
                         "datasource": {
                             "type": "prometheus",
-                            "uid": "prometheus"
+                            "uid": "${datasource}"
                         },
                         "editorMode": "code",
                         "exemplar": true,
@@ -348,7 +348,7 @@ data:
                     {
                         "datasource": {
                             "type": "prometheus",
-                            "uid": "prometheus"
+                            "uid": "${datasource}"
                         },
                         "editorMode": "code",
                         "expr": "count(\r\n  (longhorn_volume_robustness{volume=~\"$volume\"} == 2)\r\n  or\r\n  (longhorn_volume_robustness{volume=~\"$volume\", robustness=\"degraded\"} == 1)\r\n) OR on() vector(0)",
@@ -415,7 +415,7 @@ data:
                     {
                         "datasource": {
                             "type": "prometheus",
-                            "uid": "prometheus"
+                            "uid": "${datasource}"
                         },
                         "editorMode": "code",
                         "expr": "count(\r\n  (longhorn_volume_robustness{volume=~\"$volume\"} == 3)\r\n  or\r\n  (longhorn_volume_robustness{volume=~\"$volume\", robustness=\"faulted\"} == 1)\r\n) OR on() vector(0)",
@@ -430,7 +430,6 @@ data:
             },
             {
                 "datasource": {
-                    "default": false,
                     "type": "prometheus",
                     "uid": "${datasource}"
                 },
@@ -557,7 +556,7 @@ data:
                     {
                         "datasource": {
                             "type": "prometheus",
-                            "uid": "prometheus"
+                            "uid": "${datasource}"
                         },
                         "editorMode": "code",
                         "expr": "avg by (pvc_namespace, pvc, volume) (longhorn_volume_capacity_bytes{volume=~\"$volume\"})",
@@ -587,7 +586,7 @@ data:
                     {
                         "datasource": {
                             "type": "prometheus",
-                            "uid": "prometheus"
+                            "uid": "${datasource}"
                         },
                         "editorMode": "code",
                         "exemplar": false,
@@ -713,7 +712,7 @@ data:
                     {
                         "datasource": {
                             "type": "prometheus",
-                            "uid": "prometheus"
+                            "uid": "${datasource}"
                         },
                         "editorMode": "code",
                         "expr": "count(\r\n  (longhorn_volume_state{volume=~\"$volume\"} == 2)\r\n  or\r\n  (longhorn_volume_state{volume=~\"$volume\", state=\"attached\"} == 1)\r\n) OR on() vector(0)",
@@ -780,7 +779,7 @@ data:
                     {
                         "datasource": {
                             "type": "prometheus",
-                            "uid": "prometheus"
+                            "uid": "${datasource}"
                         },
                         "editorMode": "code",
                         "expr": "count(\r\n  (longhorn_volume_state{volume=~\"$volume\"} == 3)\r\n  or\r\n  (longhorn_volume_state{volume=~\"$volume\", state=\"detached\"} == 1)\r\n) OR on() vector(0)",
@@ -853,7 +852,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "expr": "avg(longhorn_node_count_total) OR on() vector(0)",
                                 "interval": "",
@@ -918,7 +917,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "expr": "count(longhorn_node_status{condition=\"allowScheduling\"}==0) OR on() vector(0)",
                                 "interval": "",
@@ -1021,7 +1020,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "exemplar": true,
                                 "expr": "(longhorn_node_storage_usage_bytes/longhorn_node_storage_capacity_bytes) * 100",
@@ -1087,7 +1086,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "expr": "(count(longhorn_node_status{condition=\"schedulable\"}==1) OR on() vector(0)) - (count(longhorn_node_status{condition=\"allowScheduling\"}==0) OR on() vector(0))",
                                 "interval": "",
@@ -1152,7 +1151,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "expr": "(avg(longhorn_node_count_total) OR on() vector(0)) - (count(longhorn_node_status{condition=\"ready\"}==1) OR on() vector(0))",
                                 "interval": "",
@@ -1240,7 +1239,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "expr": "longhorn_node_storage_capacity_bytes",
                                 "format": "table",
@@ -1375,7 +1374,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "exemplar": true,
                                 "expr": "count by (node) (\r\n  (longhorn_volume_state == 2)\r\n  or\r\n  (longhorn_volume_state{state=\"attached\"} == 1)\r\n)",
@@ -1486,7 +1485,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "exemplar": true,
                                 "expr": "(longhorn_disk_usage_bytes/longhorn_disk_capacity_bytes)*100",
@@ -1566,7 +1565,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "expr": "longhorn_disk_capacity_bytes",
                                 "format": "table",
@@ -1713,7 +1712,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "exemplar": true,
                                 "expr": "(longhorn_node_cpu_usage_millicpu / longhorn_node_cpu_capacity_millicpu) * 100",
@@ -1809,7 +1808,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "exemplar": true,
                                 "expr": "( longhorn_node_memory_usage_bytes / longhorn_node_memory_capacity_bytes ) * 100",
@@ -1905,7 +1904,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "exemplar": true,
                                 "expr": "longhorn_instance_manager_cpu_usage_millicpu",
@@ -2001,7 +2000,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "exemplar": true,
                                 "expr": "(longhorn_instance_manager_cpu_usage_millicpu/longhorn_instance_manager_cpu_requests_millicpu)*100",
@@ -2096,7 +2095,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "exemplar": true,
                                 "expr": "longhorn_instance_manager_memory_usage_bytes",
@@ -2192,7 +2191,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "exemplar": true,
                                 "expr": "longhorn_manager_cpu_usage_millicpu",
@@ -2287,7 +2286,7 @@ data:
                             {
                                 "datasource": {
                                     "type": "prometheus",
-                                    "uid": "prometheus"
+                                    "uid": "${datasource}"
                                 },
                                 "exemplar": true,
                                 "expr": "longhorn_manager_memory_usage_bytes",
@@ -2330,7 +2329,10 @@ data:
                             "alertInstanceLabelFilter": "",
                             "alertName": "Longhorn",
                             "dashboardAlerts": false,
-                            "datasource": "prometheus",
+                            "datasource": {
+                                "type": "prometheus",
+                                "uid": "${datasource}"
+                            },
                             "groupBy": [],
                             "groupMode": "default",
                             "maxItems": 20,
@@ -2362,8 +2364,9 @@ data:
             "list": [
                 {
                     "current": {},
+                    "hide": 0,
                     "includeAll": false,
-                    "label": "Datasource",
+                    "label": "Cluster",
                     "name": "datasource",
                     "options": [],
                     "query": "prometheus",
