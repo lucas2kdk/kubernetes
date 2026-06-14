@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.1.0...platform/v1.1.1) (2026-06-14)
+
+
+### Bug Fixes
+
+* **kyverno:** force-recreate ClusterPolicies so generate-rule changes stop needing manual deletes ([#34](https://github.com/lucas2kdk/kubernetes/issues/34)) ([6180105](https://github.com/lucas2kdk/kubernetes/commit/618010510a387b6c22ebd2646d7f0b9bd89c39ea))
+* **tailscale:** allow privileged egress proxies in the tailscale namespace ([#36](https://github.com/lucas2kdk/kubernetes/issues/36)) ([c3e4bc1](https://github.com/lucas2kdk/kubernetes/commit/c3e4bc17961bbe3f43d2f55fa7a3b36c4d0ae4a2))
+
 ## [1.1.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.0.0...platform/v1.1.0) (2026-06-14)
 
 
