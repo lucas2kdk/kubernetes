@@ -61,6 +61,17 @@
     },
     {
       "customType": "regex",
+      "description": "platform-version-exporter runs as a plain Deployment (not a HelmRelease), so the flux/helm-values managers don't see its image. Pinned as tag@sha256: digest for immutability; Renovate matches the tag and updates both tag and digest together.",
+      "managerFilePatterns": [
+        "/^platform/base/platform-meta/version-exporter\\.yaml$/"
+      ],
+      "matchStrings": [
+        "image: (?<depName>docker\\.io/library/python):(?<currentValue>[^@\\s]+)@sha256:[a-f0-9]+"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
       "description": "CI tool versions pinned as env vars in the PR workflow and fetched via curl. The github-actions manager only tracks `uses:` tags, so these are matched off the `# renovate:` annotation comments above each var.",
       "managerFilePatterns": [
         "/^\\.github/workflows/.+\\.ya?ml$/"

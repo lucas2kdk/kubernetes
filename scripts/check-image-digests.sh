@@ -7,8 +7,9 @@
 # replace the image between deploy and the next pod restart, making rollbacks
 # non-deterministic and bypassing supply-chain attestation.
 #
-# Scope: platform/base/tsidp/ — the only directly-authored Deployment in this
-# repo. Helm-managed images are excluded here; Trivy handles those at runtime.
+# Scope: the directly-authored (non-Helm) Deployments in this repo — tsidp and
+# platform-meta. Helm-managed images are excluded here; Trivy handles those at
+# runtime. Add a directory to enforced_dirs below when it gains an authored image.
 #
 # Additionally, the script broadly scans platform/base/ for any image: field
 # outside of Helm-managed component directories (those containing a release.yaml
@@ -41,41 +42,46 @@ PY
 }
 
 # ---------------------------------------------------------------------------
-# Phase 1 — mandatory check on the tsidp directory (the authoritative scope).
+# Phase 1 — mandatory check on the directly-authored manifest dirs (the
+# authoritative scope). Each dir must hold at least one image, and every image
+# must be @sha256-pinned.
 # ---------------------------------------------------------------------------
-echo "== SEC3: image digest pins — platform/base/tsidp/ =="
+enforced_dirs=(
+  platform/base/tsidp
+  platform/base/platform-meta
+)
 
 fail=0
-found=0
-while IFS= read -r -d '' yaml_file; do
-  images=$(extract_images "$yaml_file") || true
-  [ -z "$images" ] && continue
-  while IFS= read -r img; do
-    [ -z "$img" ] && continue
-    found=$((found + 1))
-    if printf '%s' "$img" | grep -q '@sha256:'; then
-      printf '→ ✓ %s  (%s)\n' "$img" "$yaml_file"
-    else
-      printf '→ ✗ %s  (%s)\n' "$img" "$yaml_file" >&2
-      fail=1
-    fi
-  done <<< "$images"
-done < <(find platform/base/tsidp -name '*.yaml' -print0)
+for scope in "${enforced_dirs[@]}"; do
+  echo "== SEC3: image digest pins — $scope/ =="
+  found=0
+  while IFS= read -r -d '' yaml_file; do
+    images=$(extract_images "$yaml_file") || true
+    [ -z "$images" ] && continue
+    while IFS= read -r img; do
+      [ -z "$img" ] && continue
+      found=$((found + 1))
+      if printf '%s' "$img" | grep -q '@sha256:'; then
+        printf '→ ✓ %s  (%s)\n' "$img" "$yaml_file"
+      else
+        printf '→ ✗ %s  (%s)\n' "$img" "$yaml_file" >&2
+        fail=1
+      fi
+    done <<< "$images"
+  done < <(find "$scope" -name '*.yaml' -print0)
 
-if [ "$found" -eq 0 ]; then
-  echo "✗ FAIL: no image: fields found under platform/base/tsidp/ — expected at least one." >&2
-  exit 1
-fi
+  if [ "$found" -eq 0 ]; then
+    echo "✗ FAIL: no image: fields found under $scope/ — expected at least one." >&2
+    exit 1
+  fi
+  printf '✓ all %d image(s) in %s/ are digest-pinned\n\n' "$found" "$scope"
+done
 
 if [ "$fail" -ne 0 ]; then
-  echo >&2
-  echo "✗ FAIL: one or more images in platform/base/tsidp/ are not pinned to @sha256: digests." >&2
+  echo "✗ FAIL: one or more enforced-scope images are not pinned to @sha256: digests." >&2
   echo "  Re-tag with: crane digest <image>:<tag>  then use  <image>@sha256:<hash>" >&2
   exit 1
 fi
-
-echo
-echo "✓ all $found image(s) in platform/base/tsidp/ are digest-pinned"
 
 # ---------------------------------------------------------------------------
 # Phase 2 — broad advisory scan across platform/base/ (warns, does not fail).

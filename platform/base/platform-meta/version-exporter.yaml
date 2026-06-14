@@ -16,7 +16,10 @@ spec:
       serviceAccountName: default
       containers:
         - name: exporter
-          image: python:3-alpine
+          # Full registry/repository/tag@sha256 per SEC3 (Renovate-managed): the
+          # tag lets Renovate bump it, the digest keeps the deploy immutable and
+          # the CVE scan tracking a fixed ref. Enforced by check-image-digests.sh.
+          image: docker.io/library/python:3.13-alpine@sha256:db66119d6609a3a941a9433b225f4e13d33c459cede097cf3ec2fc4d1bd314b2 # Renovate-managed
           command:
             - python3
             - -c
