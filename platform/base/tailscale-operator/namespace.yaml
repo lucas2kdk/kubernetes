@@ -1,9 +1,16 @@
 # platform.io/managed: "true" exempts this namespace from the tenant guardrails
 # (Kyverno admission policies + Cilium default-deny). See README "Platform
 # namespace convention" — the Cilium NotIn lists must be updated by hand too.
+#
+# PSA privileged: the operator's *egress* proxies run a privileged `sysctler`
+# init container (sets net.ipv4.ip_forward) and a privileged tailscale
+# container, which Talos's cluster-wide "baseline" enforcement rejects. Ingress
+# proxies (grafana/headlamp) don't need it, so this only surfaced once the first
+# egress proxy (prod-fsn's prometheus federation to test-home) was created.
 apiVersion: v1
 kind: Namespace
 metadata:
   name: tailscale
   labels:
     platform.io/managed: "true"
+    pod-security.kubernetes.io/enforce: privileged
