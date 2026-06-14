@@ -7,6 +7,15 @@ on:
   push:
     tags:
       - "platform/v*"
+  # Manual re-publish. Needed because release-please creates the tag with the
+  # default GITHUB_TOKEN, and GitHub suppresses workflow triggers for events
+  # made by that token — so the push-tag trigger above never fires for an
+  # automated release. Dispatch this with the tag to (re)push its OCI artifact.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to (re)publish, e.g. platform/v1.0.0"
+        required: true
 
 permissions:
   contents: read
@@ -21,12 +30,18 @@ jobs:
   push-artifact:
     runs-on: ubuntu-latest
     steps:
+      # On push the ref is the tag; on manual dispatch take it from the input.
+      - name: Resolve release ref
+        id: version
+        run: |
+          ref="${{ github.event.inputs.tag || github.ref_name }}"
+          echo "ref=${ref}" >> "$GITHUB_OUTPUT"
+          echo "version=${ref#platform/v}" >> "$GITHUB_OUTPUT"
+
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Extract version
-        id: version
-        run: echo "version=${GITHUB_REF_NAME#platform/v}" >> "$GITHUB_OUTPUT"
+        with:
+          ref: ${{ steps.version.outputs.ref }}
 
       - name: Install flux CLI
         run: |
@@ -48,4 +63,4 @@ jobs:
             "oci://${OCI_IMAGE}:${{ steps.version.outputs.version }}" \
             --path=./platform \
             --source="https://github.com/${{ github.repository }}.git" \
-            --revision="${{ github.ref_name }}@sha1:${{ github.sha }}"
+            --revision="${{ steps.version.outputs.ref }}@sha1:$(git rev-parse HEAD)"
