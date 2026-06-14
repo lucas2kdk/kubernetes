@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.2.0...platform/v1.3.0) (2026-06-14)
+
+
+### Features
+
+* **monitoring:** add dashboard pack (node, prometheus, cilium, traefik, ESO, trivy) ([#41](https://github.com/lucas2kdk/kubernetes/issues/41)) ([0febd21](https://github.com/lucas2kdk/kubernetes/commit/0febd2162f0c11b214e872fa7c43c6b9f47e11fd))
+
 ## [1.2.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.1.1...platform/v1.2.0) (2026-06-14)
 
 
