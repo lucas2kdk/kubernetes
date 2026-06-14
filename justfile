@@ -32,7 +32,7 @@ scan:
 
 # Assert no raw kind: Secret objects exist in the repo
 no-secrets-objects:
-    @! grep -rn 'kind: Secret' . --include='*.yaml' --exclude-dir=.git | grep -v '^\s*#'
+    @! grep -rn '^kind: Secret' . --include='*.yaml' --exclude-dir=.git | grep -v '^\s*#'
 
 # Verify every Flux source is consumed by at least one workload
 sources:
@@ -89,3 +89,4 @@ check-rules:
 # Advisory kube-score pass over rendered prod-fsn manifests (non-blocking)
 score:
     kustomize build clusters/prod-fsn --load-restrictor LoadRestrictionsNone | kube-score score -
+

@@ -2,16 +2,21 @@
 # Drift guard for the platform-managed namespace exclusion lists.
 #
 # The set of platform/system namespaces that are EXEMPT from the tenant
-# guardrails is hand-maintained in FOUR separate places (see the "Platform
-# namespace convention" section of README.md, which documents this four-place
-# lockstep requirement):
+# guardrails is hand-maintained in FOUR lockstep places (see the "Platform
+# namespace convention" section of README.md, which documents this requirement):
 #
 #   1. platform/base/network/default-deny.yaml            (Cilium NotIn values)
 #   2. platform/base/network/deny-cloud-metadata.yaml     (Cilium NotIn values)
 #   3. platform/base/network/allow-ingress-from-traefik.yaml (Cilium NotIn values)
 #   4. platform/base/policies/generate-baseline-netpol.yaml  (Kyverno exclude names)
 #
-# These four lists MUST stay set-identical. They can't be deduplicated into one
+# These four lists MUST stay set-identical.
+#
+# A fifth file, allow-ingress-from-monitoring.yaml, also uses a NotIn
+# endpointSelector but intentionally carries a SUPERSET of the platform
+# list (it additionally excludes netdata and vector, which run their own
+# ingress policies). It is tracked separately to prevent accidental removals
+# but is NOT required to be set-identical to the four above. They can't be deduplicated into one
 # source: Flux runtime substitution of a YAML list breaks kubeconform, and the
 # files live in two different kustomize builds with different field semantics.
 # So drift is only caught by this guard.
@@ -31,11 +36,16 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-# The four files and the field each one holds the list in.
+# The four files whose lists MUST be set-identical.
 cilium_files=(
   platform/base/network/default-deny.yaml
   platform/base/network/deny-cloud-metadata.yaml
   platform/base/network/allow-ingress-from-traefik.yaml
+)
+# Files that also use NotIn but carry an intentionally different (superset) list.
+# Listed here so the S6 self-coverage check accounts for them.
+notin_superset_files=(
+  platform/base/network/allow-ingress-from-monitoring.yaml
 )
 kyverno_file=platform/base/policies/generate-baseline-netpol.yaml
 
@@ -138,16 +148,18 @@ echo "✓ all four lists are set-identical ($(wc -l < "$ref_set") namespaces)"
 
 echo
 echo "== asserting exclusion guard covers all NotIn network policy files =="
-# Count the number of network policy files in platform/base/network/ that
-# contain a NotIn matchExpression (i.e., files that maintain their own
-# platform-namespace exclusion list). The cilium_files array must cover all of
-# them — if a new such file is added without updating this script, CI fails.
+# Every file in platform/base/network/ that uses a NotIn matchExpression must
+# be declared in either cilium_files (lockstep) or notin_superset_files
+# (intentionally different superset). A new such file without a matching entry
+# here will fail CI, preventing silent drift outside the guard.
+all_known_notin_files=("${cilium_files[@]}" "${notin_superset_files[@]}")
 actual_notin_files=$(grep -rl 'operator: NotIn' platform/base/network/ 2>/dev/null | sort | wc -l | tr -d ' ')
-declared_files=${#cilium_files[@]}
+declared_files=${#all_known_notin_files[@]}
 if [ "$actual_notin_files" -ne "$declared_files" ]; then
   echo "✗ FAIL: $actual_notin_files network policy files contain 'operator: NotIn' but" >&2
-  echo "  cilium_files array only covers $declared_files." >&2
-  echo "  Add the new file to the cilium_files array in this script." >&2
+  echo "  only $declared_files are declared in this script (cilium_files + notin_superset_files)." >&2
+  echo "  Add the new file to cilium_files (if it must match the lockstep set)" >&2
+  echo "  or to notin_superset_files (if it intentionally differs)." >&2
   echo "  Files with NotIn:" >&2
   grep -rl 'operator: NotIn' platform/base/network/ | sort | sed 's/^/    /' >&2
   exit 1

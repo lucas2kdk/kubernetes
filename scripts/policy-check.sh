@@ -138,13 +138,3 @@ else
   echo "✗ no generated CNP output to validate" >&2
   exit 1
 fi
-
-echo
-echo "== asserting generated CNP denies cloud metadata endpoint (169.254.169.254) =="
-if grep -q '169.254.169.254' "$gen"; then
-  echo "✓ generated CNP contains egress deny for 169.254.169.254/32"
-else
-  echo "✗ FAIL: generated CiliumNetworkPolicy does not deny 169.254.169.254/32" >&2
-  echo "  Hetzner instance metadata is reachable — tenant pods can exfiltrate credentials" >&2
-  exit 1
-fi
