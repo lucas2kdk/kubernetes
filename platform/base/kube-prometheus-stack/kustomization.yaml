@@ -18,6 +18,17 @@ resources:
   - dashboards/15987-kyverno.yaml
   - dashboards/16888-longhorn.yaml
   - dashboards/platform-version.yaml
+  # Replacements for the chart defaults we disabled + per-component coverage.
+  - dashboards/1860-node-exporter.yaml
+  - dashboards/3662-prometheus.yaml
+  - dashboards/9578-alertmanager.yaml
+  - dashboards/15762-coredns.yaml
+  - dashboards/13332-kube-state-metrics.yaml
+  - dashboards/16611-cilium-agent.yaml
+  - dashboards/16613-hubble.yaml
+  - dashboards/17346-traefik.yaml
+  - dashboards/21217-external-secrets.yaml
+  - dashboards/17813-trivy-operator.yaml
 
 # The committed Grafana dashboard JSON carries literal ${...} tokens (Grafana
 # template variables) that Flux's post-build envsubst can't parse — it fails the
