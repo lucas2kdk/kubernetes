@@ -56,6 +56,15 @@ The release itself is cut by merging the release-please PR (tags
 `platform/v<x.y.z>`) and publishing the OCI artifact — see
 [the release pipeline](operations.md) and `.github/workflows/release.yaml`.
 
+**Release cadence — don't cut one per PR.** release-please keeps the release
+PR open and re-accumulates every new commit into it, so it's a *buffer*: let
+several merges pile up and merge the release PR deliberately (a batch is one
+release), not on sight — otherwise each `feat:` becomes its own minor bump and
+the version churns. Right-size the commit type to match: `feat:` (minor) is for
+changes to *cluster behaviour*; content-only changes like adding a Grafana
+dashboard are `chore:`/`docs:` so they ride the next release without forcing a
+bump of their own.
+
 **Per-cluster promotion.** Each cluster has its own `platform-source.yaml`, so
 the version pin is the per-cluster promotion lever: bump `test-home` to a new
 tag, soak it, then bump `prod-fsn`. If both files name the same tag they are in
