@@ -268,3 +268,28 @@ spec:
   issuerRef:
     kind: ClusterIssuer
     name: letsencrypt-production
+---
+# add-seccomp-runtime-default fixtures.
+# Pod with no seccompProfile in a non-excluded namespace — the mutate must add
+# pod-level RuntimeDefault (see seccomp-target-pod.patched.yaml).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: seccomp-target-pod
+  namespace: tenant-app
+spec:
+  containers:
+    - name: app
+      image: nginx:1.27.2
+---
+# Same pod in flux-system — excluded by name, so the mutate must SKIP it
+# (bootstrap webhook-deadlock guard).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: seccomp-fluxsystem-pod
+  namespace: flux-system
+spec:
+  containers:
+    - name: app
+      image: nginx:1.27.2

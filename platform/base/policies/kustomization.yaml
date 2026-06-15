@@ -15,6 +15,9 @@ resources:
   - require-requests.yaml
   - disallow-latest-tag.yaml
   - require-pod-probes.yaml
+  # CIS 5.7.2: mutate Pods to seccompProfile RuntimeDefault when unset
+  # (fleet-wide, incl. platform namespaces — RuntimeDefault is universally safe).
+  - add-seccomp-runtime-default.yaml
   # Scope the DNS-01 ClusterIssuer to platform namespaces (tenants must use a
   # namespaced Issuer).
   - restrict-clusterissuer.yaml

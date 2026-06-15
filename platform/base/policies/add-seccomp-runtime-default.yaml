@@ -1,0 +1,49 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: add-seccomp-runtime-default
+  annotations:
+    policies.kyverno.io/title: Add Seccomp RuntimeDefault
+    policies.kyverno.io/category: CIS Kubernetes Benchmark
+    policies.kyverno.io/description: >-
+      Mutate Pods to set a pod-level seccompProfile of RuntimeDefault when none
+      is present. Closes CIS 5.7.2 ("seccomp profile is set to RuntimeDefault"),
+      the single largest cleanly-fixable gap in the trivy k8s-cis-1.23 report
+      (~75 findings across AVD-KSV-0104/0030). RuntimeDefault is the container
+      runtime's own default filter and is compatible with every workload —
+      including the privileged platform components — so unlike the runAsNonRoot
+      / drop-ALL-capabilities controls this can be applied fleet-wide as a
+      mutate instead of editing each workload.
+spec:
+  # Admission-time mutate only; no background/mutateExisting processing needed.
+  background: false
+  rules:
+    - name: add-pod-seccomp
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          # Non-repo-managed system namespaces — same set the other pod policies
+          # list. kube-system runs static pods (kubelet bypasses admission, so a
+          # mutate can't reach them) and flux-system is the bootstrap webhook
+          # deadlock risk; leave both alone. We deliberately do NOT exclude
+          # platform.io/managed namespaces here — RuntimeDefault is safe for the
+          # privileged platform components, and they hold most of the CIS 5.7.2
+          # findings (longhorn, tailscale, tsidp, …), so they are the point.
+          - resources:
+              namespaces:
+                - kube-system
+                - kube-node-lease
+                - kube-public
+                - flux-system
+      mutate:
+        patchStrategicMerge:
+          spec:
+            securityContext:
+              # +() add-anchor: only set when the pod sets no seccompProfile,
+              # so an explicit choice (incl. a stricter Localhost profile) wins.
+              +(seccompProfile):
+                type: RuntimeDefault

@@ -57,6 +57,7 @@ this is list #4 of the [four-list lockstep](networking.md#the-four-list-lockstep
 | `pod-security-restricted` | [pod-security-restricted.yaml](../platform/base/policies/pod-security-restricted.yaml) | **Audit** | Enforces the PSS **restricted** profile (no privilege escalation, runAsNonRoot, seccomp required, drop all capabilities, safe volume types). Builds on baseline. | `platform.io/managed` label **+** explicit system namespaces |
 | `require-pod-probes` | [require-pod-probes.yaml](../platform/base/policies/require-pod-probes.yaml) | **Audit** | Requires `livenessProbe` and `readinessProbe` (`periodSeconds > 0`) on every container. | `platform.io/managed` label **+** explicit system namespaces |
 | `require-resource-requests` | [require-requests.yaml](../platform/base/policies/require-requests.yaml) | **Audit** | Requires CPU **and** memory `resources.requests` on every container. Limits are intentionally not required (CPU limits cause throttling). | `platform.io/managed` label **+** explicit system namespaces |
+| `add-seccomp-runtime-default` | [add-seccomp-runtime-default.yaml](../platform/base/policies/add-seccomp-runtime-default.yaml) | **Mutate** | Adds a pod-level `seccompProfile: RuntimeDefault` when the Pod sets none (`+()` add-anchor, so an explicit profile wins). Closes CIS 5.7.2. | Explicit `kube-system`, `kube-node-lease`, `kube-public`, `flux-system` **only** — platform namespaces are *included* (RuntimeDefault is safe for them and they hold most of the findings) |
 
 Notes:
 
