@@ -227,3 +227,44 @@ spec:
         requests:
           cpu: 50m
           memory: 64Mi
+---
+# Tenant Certificate referencing the cluster-wide ClusterIssuer — must FAIL
+# restrict-clusterissuer (a tenant could mint a cert for any zone host).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tenant-cert-clusterissuer
+  namespace: tenant-app
+spec:
+  secretName: tenant-cert-tls
+  dnsNames: ["app.rosenvold.tech"]
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-production
+---
+# Tenant Certificate using a namespaced Issuer — must PASS.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: tenant-cert-issuer
+  namespace: tenant-app
+spec:
+  secretName: tenant-cert2-tls
+  dnsNames: ["app.rosenvold.tech"]
+  issuerRef:
+    kind: Issuer
+    name: tenant-ca
+---
+# Same ClusterIssuer reference but in a platform.io/managed namespace — SKIP
+# (platform components legitimately use the ClusterIssuer).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: platform-cert-clusterissuer
+  namespace: platform-thing
+spec:
+  secretName: platform-cert-tls
+  dnsNames: ["grafana.rosenvold.tech"]
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-production
