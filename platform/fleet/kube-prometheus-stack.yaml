@@ -13,3 +13,7 @@ spec:
       # ${tailnet} -> Grafana root_url + OIDC URLs ({grafana,idp}.<tailnet>.ts.net).
       - kind: ConfigMap
         name: fleet-vars
+      # ${cluster_name} -> Prometheus `cluster` external label + the Alertmanager
+      # route that mutes the test cluster (release.yaml).
+      - kind: ConfigMap
+        name: cluster-vars

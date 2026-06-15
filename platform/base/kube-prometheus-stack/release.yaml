@@ -96,6 +96,11 @@ spec:
             foldersFromFilesStructure: true
     prometheus:
       prometheusSpec:
+        # Tag every sample and outbound alert with the cluster it came from
+        # (${cluster_name} -> prod-fsn | test-home). The Alertmanager route below
+        # keys off this to mute the test cluster.
+        externalLabels:
+          cluster: ${cluster_name}
         # Bounded, self-pruning TSDB. retentionSize trims oldest blocks once the
         # data dir exceeds 85GiB — kept under the 100Gi PVC so WAL/compaction has
         # headroom. 30d is the time ceiling, whichever hits first wins.
@@ -117,7 +122,55 @@ spec:
         # ruleSelector too: cluster-wide PrometheusRule discovery feeds the repo's
         # platform alert rules into Prometheus regardless of chart labels.
         ruleSelectorNilUsesHelmValues: false
-    # TODO: Alertmanager routing/receivers (PagerDuty/Slack), alert rules from repo.
-    # Alertmanager routing (Discord) + the platform PrometheusRule set are added
-    # on the feat/alertmanager-routing-alerts branch; once merged the rules land
-    # here via the cluster-wide ruleSelector above.
+    alertmanager:
+      alertmanagerSpec:
+        # Mounts the alertmanager-discord Secret (external-secret-alertmanager.yaml)
+        # at /etc/alertmanager/secrets/alertmanager-discord/, where the receivers
+        # below read it as webhook_url_file — the URL stays out of this config.
+        secrets:
+          - alertmanager-discord
+      # Supplying config replaces the chart's default wholesale, so the Watchdog
+      # null route (paired with the always-firing Watchdog alert) is re-declared
+      # here to keep that dead-man's-switch intact.
+      config:
+        global:
+          resolve_timeout: 5m
+        route:
+          receiver: discord
+          group_by: ["alertname", "namespace"]
+          group_wait: 30s
+          group_interval: 5m
+          repeat_interval: 4h
+          routes:
+            # Mute the test cluster entirely: alerts still fire and show in its
+            # own Prometheus/Alertmanager UI, but nothing pages Discord. No-op on
+            # prod-fsn (its alerts carry cluster="prod-fsn"). Takes effect if/when
+            # kube-prometheus-stack is added to the test-home fleet.
+            - receiver: "null"
+              matchers:
+                - cluster = "test-home"
+            - receiver: "null"
+              matchers:
+                - alertname = "Watchdog"
+            - receiver: discord-critical
+              matchers:
+                - severity = "critical"
+              repeat_interval: 1h
+        # A firing critical for an alertname/namespace silences the matching
+        # warning so a single incident doesn't double-post to Discord.
+        inhibit_rules:
+          - source_matchers:
+              - severity = "critical"
+            target_matchers:
+              - severity = "warning"
+            equal: ["alertname", "namespace"]
+        receivers:
+          - name: "null"
+          - name: discord
+            discord_configs:
+              - webhook_url_file: /etc/alertmanager/secrets/alertmanager-discord/webhook_url
+                send_resolved: true
+          - name: discord-critical
+            discord_configs:
+              - webhook_url_file: /etc/alertmanager/secrets/alertmanager-discord/webhook_url
+                send_resolved: true
