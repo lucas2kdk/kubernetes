@@ -11,3 +11,4 @@ resources:
   - deny-cloud-metadata.yaml
   - allow-ingress-from-traefik.yaml
   - allow-ingress-from-monitoring.yaml
+  - allow-gateway-proxy.yaml

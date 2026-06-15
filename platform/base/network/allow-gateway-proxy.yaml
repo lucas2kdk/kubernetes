@@ -1,0 +1,50 @@
+# Additive allow for the Cilium Gateway API (Envoy) proxy. NOT one of the four
+# lockstep namespace lists — it selects a reserved identity by label, not
+# namespaces, so scripts/check-namespace-lists.sh ignores it (it uses matchLabels,
+# not the NotIn operator the guard keys off).
+#
+# Why this exists: the Gateway's Envoy proxy runs under Cilium's reserved
+# `ingress` identity, which has no io.kubernetes.pod.namespace label. A negative
+# namespace match selects label-absent endpoints, so default-deny.yaml scoops up the
+# proxy and Cilium's L7 filter answers external requests with "403 Access denied"
+# — the cilium-gateway namespace exclusion only covers PODS in that namespace,
+# not the proxy identity. This grant lets the proxy receive client traffic and
+# forward it to backends. (Diagnosed 2026-06-15 bringing up the Gateway trial.)
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: allow-gateway-proxy
+spec:
+  description: >-
+    Allow the Cilium Gateway API Envoy proxy (reserved:ingress identity) to
+    receive ingress from external clients and the cluster, and to egress to
+    backend pods + DNS. Without it, default-deny catches the proxy identity and
+    every routed request is denied at L7.
+  endpointSelector:
+    matchLabels:
+      reserved:ingress: ""
+  ingress:
+    # Client traffic to the LoadBalancer/Gateway address arrives as `world`
+    # (external, incl. via Cloudflare); in-cluster callers arrive as `cluster`.
+    - fromEntities:
+        - world
+        - cluster
+        - host
+        - remote-node
+  egress:
+    # Forward to backend Services/pods (cluster), reach the node/health checks,
+    # and resolve names against CoreDNS.
+    - toEntities:
+        - cluster
+        - host
+        - remote-node
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s:k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
