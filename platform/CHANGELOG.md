@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.5.0...platform/v1.5.1) (2026-06-15)
+
+
+### Bug Fixes
+
+* **gateway:** give the HTTP listener a hostname so the redirect renders ([#78](https://github.com/lucas2kdk/kubernetes/issues/78)) ([7233782](https://github.com/lucas2kdk/kubernetes/commit/7233782ffffb28d50ee78527fdcc6e89acb28943))
+
 ## [1.5.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.4.0...platform/v1.5.0) (2026-06-15)
 
 
