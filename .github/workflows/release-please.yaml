@@ -1,8 +1,10 @@
 name: Release Please
 
 # Creates and maintains the release PR that accumulates the changelog and
-# computes the next SemVer. Merging that PR is the gate that cuts a release
-# and pushes the platform/vX.Y.Z tag, which triggers the OCI push in release.yaml.
+# computes the next SemVer. Merging that PR cuts a release and pushes the
+# platform/vX.Y.Z tag. Because that tag is created with GITHUB_TOKEN it can't
+# trigger release.yaml's push-tag event, so we call release.yaml directly here
+# the moment a release is cut (the publish job below).
 on:
   push:
     branches:
@@ -15,9 +17,24 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      tag_name: ${{ steps.release.outputs['platform--tag_name'] }}
     steps:
       - uses: googleapis/release-please-action@v5
+        id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  # Publish the OCI artifact automatically when a release was just cut, so no
+  # manual workflow_dispatch of release.yaml is needed. secrets: inherit passes
+  # the PUSHER_* registry credentials through to the reusable workflow.
+  publish:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    uses: ./.github/workflows/release.yaml
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}
+    secrets: inherit

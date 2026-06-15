@@ -1,25 +1,38 @@
 name: Release
 
-# Fires when release-please merges a release PR and creates a platform/vX.Y.Z tag.
 # Renders the platform/ directory, injects the version into platform-meta, and
 # pushes an immutable OCI artifact to the self-hosted registry oci.rosenvold.tech.
+#
+# Normally invoked automatically: release-please.yaml calls this (workflow_call)
+# the moment it cuts a release. The push-tag trigger below CANNOT do that —
+# release-please creates the tag with the default GITHUB_TOKEN and GitHub
+# suppresses workflow triggers for that token — so it only fires for tags pushed
+# by a human. workflow_dispatch stays for manual (re)publish of any tag.
 on:
   push:
     tags:
       - "platform/v*"
-  # Manual re-publish. Needed because release-please creates the tag with the
-  # default GITHUB_TOKEN, and GitHub suppresses workflow triggers for events
-  # made by that token — so the push-tag trigger above never fires for an
-  # automated release. Dispatch this with the tag to (re)push its OCI artifact.
   workflow_dispatch:
     inputs:
       tag:
         description: "Release tag to (re)publish, e.g. platform/v1.0.0"
         required: true
+  workflow_call:
+    inputs:
+      tag:
+        description: "Release tag to publish, e.g. platform/v1.0.0"
+        required: true
+        type: string
+    secrets:
+      PUSHER_USERNAME:
+        required: true
+      PUSHER_PASSWORD:
+        required: true
 
+# Registry auth uses the PUSHER_* secrets, not GITHUB_TOKEN, so only read access
+# to the repo is needed.
 permissions:
   contents: read
-  packages: write
 
 env:
   OCI_IMAGE: oci.rosenvold.tech/platform
@@ -30,11 +43,12 @@ jobs:
   push-artifact:
     runs-on: ubuntu-latest
     steps:
-      # On push the ref is the tag; on manual dispatch take it from the input.
+      # inputs.tag covers both workflow_call and workflow_dispatch; on a tag push
+      # it's empty, so fall back to the pushed ref.
       - name: Resolve release ref
         id: version
         run: |
-          ref="${{ github.event.inputs.tag || github.ref_name }}"
+          ref="${{ inputs.tag || github.ref_name }}"
           echo "ref=${ref}" >> "$GITHUB_OUTPUT"
           echo "version=${ref#platform/v}" >> "$GITHUB_OUTPUT"
 
