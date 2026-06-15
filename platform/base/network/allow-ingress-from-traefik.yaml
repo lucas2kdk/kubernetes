@@ -47,6 +47,7 @@ spec:
           # being the only policy applied and implicitly blocking intra-namespace
           # traffic (e.g. longhorn-manager → instance-manager gRPC on :8500).
           - longhorn-system
+          - cilium-gateway # Cilium Gateway API trial; lockstep with default-deny.
   ingress:
     - fromEndpoints:
         - matchLabels:

@@ -50,6 +50,7 @@ spec:
           # blocks egress to the kube-apiserver entity (not covered by any
           # allow rule when longhorn-system is outside all other CCNPs).
           - longhorn-system
+          - cilium-gateway # Cilium Gateway API trial; lockstep with default-deny.
   egressDeny:
     - toCIDR:
         - 169.254.169.254/32

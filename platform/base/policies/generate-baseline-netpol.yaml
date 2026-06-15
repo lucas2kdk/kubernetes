@@ -71,6 +71,9 @@ spec:
                 # and cuts the CSI sidecars off from the apiserver (2026-06-12
                 # outage: provisioner crash-looped, PVCs stuck Pending).
                 - longhorn-system
+                # Cilium Gateway API trial: platform-managed, manages its own
+                # connectivity — no baseline CNP. Lockstep with default-deny.
+                - cilium-gateway
       generate:
         apiVersion: cilium.io/v2
         kind: CiliumNetworkPolicy

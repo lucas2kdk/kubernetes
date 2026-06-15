@@ -1,0 +1,18 @@
+# Routes draw.rosenvold.tech (the host the compose served via Traefik) to the
+# Excalidraw service, through the Cilium Gateway's HTTP listener. Reach it by
+# pointing an AAAA record at the Gateway IP (2a01:4f8:173:2015::100) or with
+# `curl --resolve draw.rosenvold.tech:80:[2a01:4f8:173:2015::100]`.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: excalidraw
+  namespace: cilium-gateway
+spec:
+  parentRefs:
+    - name: cilium-gw
+  hostnames:
+    - draw.rosenvold.tech
+  rules:
+    - backendRefs:
+        - name: excalidraw
+          port: 80
