@@ -1,0 +1,24 @@
+# Cilium Gateway. gatewayClassName: cilium resolves to the GatewayClass that the
+# Cilium operator auto-creates when gatewayAPI.enabled=true (set in Terraform,
+# cluster-addons/main.tf). Cilium provisions an Envoy-backed LoadBalancer Service
+# (cilium-gateway-cilium-gw) that draws its IPv6 from ip-pool.yaml.
+#
+# HTTP-only for now — no TLS listener. Matches Traefik's current "no cert story";
+# add an HTTPS listener + cert (wildcard *.rosenvold.tech via cert-manager) when
+# this graduates from a trial to real exposure.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: cilium-gw
+  namespace: cilium-gateway
+spec:
+  gatewayClassName: cilium
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        # Same: only HTTPRoutes in this namespace may attach. The trial backend
+        # lives here too, so no cross-namespace ReferenceGrant is needed.
+        namespaces:
+          from: Same

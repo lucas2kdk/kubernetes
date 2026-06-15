@@ -36,6 +36,7 @@ spec:
           - tsidp
           - trivy-system
           - longhorn-system
+          - cilium-gateway # Cilium Gateway API trial; mirrors the guarded lists.
   ingress:
     - fromEndpoints:
         - matchLabels:

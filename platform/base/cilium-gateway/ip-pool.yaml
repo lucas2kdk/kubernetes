@@ -1,0 +1,19 @@
+# LoadBalancer IP for the Cilium Gateway. prod-fsn is a SINGLE Hetzner dedicated
+# server with the entire IPv6 2a01:4f8:173:2015::/64 ROUTED to it (node = ::2,
+# Hetzner gateway = ::1). Because the whole /64 already routes to the node, an
+# address from it needs NO CiliumL2AnnouncementPolicy — L2/ARP announcement is
+# for a shared LAN segment (e.g. the test-home cluster), not a routed cloud node.
+# So this is plain LB-IPAM: one deterministic /128 handed to the Gateway service.
+#
+# This base only runs on prod-fsn (it's in platform/fleet/, which test-home does
+# not pull wholesale), so the prefix is hardcoded rather than a cluster-vars token.
+apiVersion: cilium.io/v2
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: cilium-gateway
+spec:
+  # serviceSelector omitted: this is the only LoadBalancer Service in the cluster
+  # (Traefik is ClusterIP). Scope to io.cilium.gateway/owning-gateway=cilium-gw if
+  # other LB services ever appear and shouldn't draw from this single-address pool.
+  blocks:
+    - cidr: "2a01:4f8:173:2015::100/128"

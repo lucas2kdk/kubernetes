@@ -55,6 +55,9 @@ spec:
           # longhorn-manager (:9500) for the Longhorn dashboard and so volume
           # attach/rebuild is never gated on a network policy.
           - longhorn-system
+          # Cilium Gateway API trial (platform/base/cilium-gateway): the Gateway's
+          # Envoy proxy pod runs here and must not be caught by default-deny.
+          - cilium-gateway
   ingress:
     # Allow node-level traffic (kubelet health/liveness probes) and the API server.
     - fromEntities:

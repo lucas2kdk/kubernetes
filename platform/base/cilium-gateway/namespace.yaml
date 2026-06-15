@@ -1,0 +1,14 @@
+# platform.io/managed: "true" exempts this namespace from the tenant guardrails
+# (Kyverno admission policies + Cilium default-deny). See README "Platform
+# namespace convention" — the four Cilium/Kyverno NotIn lists were updated by
+# hand too (default-deny, deny-cloud-metadata, allow-ingress-from-traefik,
+# generate-baseline-netpol + the allow-ingress-from-monitoring mirror).
+#
+# Trial namespace for evaluating Cilium's Gateway API implementation alongside
+# Traefik. Self-contained so the whole experiment is `kubectl delete ns` / revert.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cilium-gateway
+  labels:
+    platform.io/managed: "true"
