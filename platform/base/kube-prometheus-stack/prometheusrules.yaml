@@ -62,6 +62,23 @@ spec:
           annotations:
             summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} crash-looping"
             description: "Container {{ $labels.container }} has been in CrashLoopBackOff for >10m."
+        # last_terminated_reason persists after the kill, so gate on a recent
+        # restart to fire only when an OOM actually just happened (and to
+        # auto-clear once the container stabilises). Motivated by the 2026-06-12
+        # Kyverno page-cache OOM — PodCrashLooping shows the symptom, this the why.
+        - alert: ContainerOOMKilled
+          expr: |
+            max by (namespace, pod, container) (
+              kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+              and on (namespace, pod, container)
+              rate(kube_pod_container_status_restarts_total[15m]) > 0
+            )
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Container {{ $labels.namespace }}/{{ $labels.pod }} OOMKilled"
+            description: "{{ $labels.container }} in {{ $labels.namespace }}/{{ $labels.pod }} was OOMKilled — raise its memory limit or find the leak."
 
     - name: flux
       rules:
@@ -98,6 +115,17 @@ spec:
           annotations:
             summary: "Longhorn volume {{ $labels.volume }} faulted"
             description: "Volume {{ $labels.volume }} is faulted — data is offline."
+        # Capacity, not health: the robustness alerts above won't fire on a volume
+        # that's simply filling up. actual_size is thin-provisioned usage.
+        - alert: LonghornVolumeSpaceLow
+          expr: |
+            longhorn_volume_actual_size_bytes * 100 / longhorn_volume_capacity_bytes > 85
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Longhorn volume {{ $labels.volume }} nearly full"
+            description: "Volume {{ $labels.volume }} is at {{ $value | printf \"%.1f\" }}% of capacity."
 
     - name: kyverno
       rules:
