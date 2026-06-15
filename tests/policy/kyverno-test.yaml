@@ -21,6 +21,7 @@ policies:
   - ../../platform/base/policies/pod-security-restricted.yaml
   - ../../platform/base/policies/require-pod-probes.yaml
   - ../../platform/base/policies/require-requests.yaml
+  - ../../platform/base/policies/add-seccomp-runtime-default.yaml
   - ../../platform/base/policies/flux-multi-tenancy.yaml
   - ../../platform/base/policies/restrict-clusterissuer.yaml
   - ../../platform/base/policies/generate-baseline-netpol.yaml
@@ -225,6 +226,20 @@ results:
     resources: [init-privileged-pod]
     kind: Pod
     result: fail
+
+  # --- add-seccomp-runtime-default: adds pod-level RuntimeDefault when unset,
+  # skips excluded system namespaces ---
+  - policy: add-seccomp-runtime-default
+    rule: add-pod-seccomp
+    resources: [seccomp-target-pod]
+    patchedResources: seccomp-target-pod.patched.yaml
+    kind: Pod
+    result: pass
+  - policy: add-seccomp-runtime-default
+    rule: add-pod-seccomp
+    resources: [seccomp-fluxsystem-pod]
+    kind: Pod
+    result: skip
 
   # --- restrict-clusterissuer: tenant ClusterIssuer ref rejected, namespaced
   # Issuer allowed, platform namespace exempt ---

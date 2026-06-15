@@ -1,0 +1,14 @@
+# Expected output of add-seccomp-runtime-default mutating seccomp-target-pod:
+# a pod-level securityContext.seccompProfile.type RuntimeDefault is added.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: seccomp-target-pod
+  namespace: tenant-app
+spec:
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: app
+      image: nginx:1.27.2
