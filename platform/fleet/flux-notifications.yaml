@@ -1,0 +1,13 @@
+# Flux → Discord drift alerts (notification-controller Provider + Alert + the
+# ESO-synced Discord webhook).
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: flux-notifications
+  namespace: flux-system
+spec:
+  path: ./base/flux-notifications
+  dependsOn:
+    # The Discord webhook is a Vault-synced secret, so the ClusterSecretStore
+    # must exist before the ExternalSecret here can resolve.
+    - name: external-secrets-stores
