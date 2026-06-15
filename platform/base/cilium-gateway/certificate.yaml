@@ -1,0 +1,17 @@
+# Host-scoped TLS cert for the Gateway's HTTPS listener, issued by the shared
+# Let's Encrypt DNS-01 (Cloudflare) ClusterIssuer. cert-manager writes the keypair
+# to the draw-rosenvold-tech-tls Secret in THIS namespace; Cilium then mirrors it
+# into cilium-secrets (enable-gateway-api-secrets-sync=true) for Envoy to serve.
+# Deliberately not a wildcard — scoped to this trial host.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: draw-rosenvold-tech
+  namespace: cilium-gateway
+spec:
+  secretName: draw-rosenvold-tech-tls
+  dnsNames:
+    - draw.rosenvold.tech
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-production

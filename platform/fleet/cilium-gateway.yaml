@@ -1,8 +1,8 @@
-# Trial: Cilium Gateway API alongside Traefik. A reconcile root (no dependsOn) —
-# like network-policies: the `cilium` GatewayClass, Gateway API CRDs, and Cilium
-# LB-IPAM all come from Terraform/Talos out-of-band and predate Flux. No postBuild
-# substitution: the IPv6 LB prefix is hardcoded for prod-fsn (see base/ip-pool.yaml),
-# and only prod-fsn pulls the whole fleet, so test-home never reconciles this.
+# Trial: Cilium Gateway API alongside Traefik. The `cilium` GatewayClass, Gateway
+# API CRDs, and Cilium LB-IPAM all come from Terraform/Talos out-of-band and predate
+# Flux. No postBuild substitution: the IPv6 LB prefix is hardcoded for prod-fsn (see
+# base/ip-pool.yaml), and only prod-fsn pulls the whole fleet, so test-home never
+# reconciles this.
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
@@ -10,3 +10,7 @@ metadata:
   namespace: flux-system
 spec:
   path: ./base/cilium-gateway
+  dependsOn:
+    # The HTTPS listener serves a cert-manager Certificate (certificate.yaml), so
+    # the controller + the letsencrypt-production ClusterIssuer must exist first.
+    - name: cert-manager-issuers

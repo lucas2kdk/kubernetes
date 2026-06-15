@@ -3,9 +3,10 @@
 # cluster-addons/main.tf). Cilium provisions an Envoy-backed LoadBalancer Service
 # (cilium-gateway-cilium-gw) that draws its IPv6 from ip-pool.yaml.
 #
-# HTTP-only for now — no TLS listener. Matches Traefik's current "no cert story";
-# add an HTTPS listener + cert (wildcard *.rosenvold.tech via cert-manager) when
-# this graduates from a trial to real exposure.
+# Two listeners: :80 only carries the HTTP→HTTPS redirect (http-redirect.yaml),
+# and :443 terminates TLS with the cert-manager cert (certificate.yaml) and
+# serves the app route (httproute.yaml). The reserved:ingress proxy identity is
+# allowed through default-deny by platform/base/network/allow-gateway-proxy.yaml.
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -18,7 +19,19 @@ spec:
       protocol: HTTP
       port: 80
       allowedRoutes:
-        # Same: only HTTPRoutes in this namespace may attach. The trial backend
-        # lives here too, so no cross-namespace ReferenceGrant is needed.
+        # Same: only HTTPRoutes in this namespace may attach. No cross-namespace
+        # ReferenceGrant needed — the routes + backend live here too.
+        namespaces:
+          from: Same
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: draw.rosenvold.tech
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: draw-rosenvold-tech-tls
+      allowedRoutes:
         namespaces:
           from: Same

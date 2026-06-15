@@ -3,6 +3,8 @@ kind: Kustomization
 resources:
   - namespace.yaml
   - ip-pool.yaml
+  - certificate.yaml
   - gateway.yaml
   - excalidraw.yaml
   - httproute.yaml
+  - http-redirect.yaml
