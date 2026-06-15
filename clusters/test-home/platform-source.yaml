@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m
-  url: oci://ghcr.io/lucas2kdk/platform
+  url: oci://oci.rosenvold.tech/platform
   ref:
     # ponytail: this is THE version pin — bump it in a PR to promote test-home
-    tag: "1.3.0"
+    tag: "1.4.0"

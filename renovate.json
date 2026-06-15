@@ -85,14 +85,14 @@
     {
       "description": "Platform promotion — test-home. Separate PR so test-home can be validated before prod-fsn is promoted.",
       "matchFileNames": ["clusters/test-home/platform-source.yaml"],
-      "matchPackageNames": ["ghcr.io/lucas2kdk/platform"],
+      "matchPackageNames": ["oci.rosenvold.tech/platform"],
       "groupName": "platform promotion — test-home",
       "addLabels": ["platform-promotion"]
     },
     {
       "description": "Platform promotion — prod-fsn. Requires dashboard approval so prod is never auto-promoted; merge the test-home PR and validate first.",
       "matchFileNames": ["clusters/prod-fsn/platform-source.yaml"],
-      "matchPackageNames": ["ghcr.io/lucas2kdk/platform"],
+      "matchPackageNames": ["oci.rosenvold.tech/platform"],
       "groupName": "platform promotion — prod-fsn",
       "addLabels": ["platform-promotion"],
       "dependencyDashboardApproval": true
