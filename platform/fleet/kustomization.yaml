@@ -9,6 +9,7 @@ resources:
   - cert-manager.yaml
   - external-secrets-stores.yaml
   - external-secrets.yaml
+  - flux-notifications.yaml
   - headlamp.yaml
   - kube-prometheus-stack.yaml
   - kyverno-policies.yaml

@@ -1,0 +1,23 @@
+# Pings Discord when Flux acts on a Kustomization/HelmRelease — including when it
+# detects and corrects DRIFT, i.e. someone changed a Flux-managed resource out of
+# band (kubectl edit/patch/apply). eventSeverity: info is required to receive
+# drift/apply events (error-only would miss them); it also surfaces Git-driven
+# applies, so a quiet repo means a drift ping is almost always a manual change.
+#
+# NOTE: only catches resources Flux MANAGES. Brand-new unmanaged objects and pod
+# restarts are invisible to Flux — those need audit-log-based detection (not set
+# up). Tune the firehose later with spec.eventMetadata / exclusionList if noisy.
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: drift
+  namespace: flux-system
+spec:
+  providerRef:
+    name: discord
+  eventSeverity: info
+  eventSources:
+    - kind: Kustomization
+      name: "*"
+    - kind: HelmRelease
+      name: "*"

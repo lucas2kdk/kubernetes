@@ -1,0 +1,13 @@
+# Discord notification target for Flux's notification-controller (ships with the
+# Flux bootstrap). The webhook URL comes from the flux-discord Secret's `address`
+# key (external-secret.yaml); notification-controller appends Discord's /slack
+# suffix automatically for type: discord.
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: discord
+  namespace: flux-system
+spec:
+  type: discord
+  secretRef:
+    name: flux-discord

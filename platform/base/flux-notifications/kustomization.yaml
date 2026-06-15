@@ -1,0 +1,9 @@
+# Flux notification-controller → Discord drift alerts. All resources live in the
+# flux-system namespace (already a platform namespace, so no namespace.yaml / no
+# four-list exclusion needed).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - external-secret.yaml
+  - provider.yaml
+  - alert.yaml
