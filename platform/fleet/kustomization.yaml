@@ -15,6 +15,7 @@ resources:
   - monitoring-extras.yaml
   - network-policies.yaml
   - policy-reporter.yaml
+  - priority-classes.yaml
   - tailscale-operator.yaml
   - traefik.yaml
   - trivy-operator.yaml

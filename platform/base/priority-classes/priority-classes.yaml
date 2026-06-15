@@ -1,0 +1,27 @@
+# Platform vs tenant scheduling priority (#47). Platform components must out-rank
+# tenant workloads when a node is under pressure — preemption/eviction during a
+# node drain, K8s upgrade, or autoscale-down. Values sit far below Kubernetes'
+# built-in system-cluster-critical (2e9) so platform pods never preempt
+# control-plane / CNI pods.
+#
+# Adoption is opt-in per workload via `priorityClassName`; defining the classes
+# is the prerequisite. Wiring each component's HelmRelease/Deployment is the
+# remaining half of #47, and the tenant-default class belongs in the tenant
+# scaffold (#59) so every tenant pod sits below platform without each team
+# setting it. Both are globalDefault:false on purpose — a global default would
+# silently re-prioritise every existing pod in the cluster.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: platform-critical
+value: 100000
+globalDefault: false
+description: "Platform components — preempt and outlive tenant workloads under node pressure."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: tenant-default
+value: 0
+globalDefault: false
+description: "Default for tenant workloads — yields to platform-critical under node pressure."
