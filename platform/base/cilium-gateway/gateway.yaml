@@ -18,6 +18,11 @@ spec:
     - name: http
       protocol: HTTP
       port: 80
+      # Must match the redirect route's hostname: with a catch-all (hostname-less)
+      # listener Cilium renders an empty insecure route config and plain HTTP 404s
+      # instead of redirecting. Verified on prod 2026-06-15 — adding this flips it
+      # from 404 to 301→https.
+      hostname: draw.rosenvold.tech
       allowedRoutes:
         # Same: only HTTPRoutes in this namespace may attach. No cross-namespace
         # ReferenceGrant needed — the routes + backend live here too.
