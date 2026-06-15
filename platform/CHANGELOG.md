@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.4.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.3.0...platform/v1.4.0) (2026-06-15)
+
+
+### Features
+
+* **gateway:** add Cilium Gateway API trial alongside Traefik ([#69](https://github.com/lucas2kdk/kubernetes/issues/69)) ([ebfc3b7](https://github.com/lucas2kdk/kubernetes/commit/ebfc3b73b85a03aea7e8c4f3829c74bb41a77d4e))
+* **monitoring:** Alertmanager Discord routing + platform alert rules ([#16](https://github.com/lucas2kdk/kubernetes/issues/16)) ([7076395](https://github.com/lucas2kdk/kubernetes/commit/7076395443074c729f5976b33876625762876dbb))
+* **platform:** add platform-critical and tenant-default PriorityClasses ([#62](https://github.com/lucas2kdk/kubernetes/issues/62)) ([777f4aa](https://github.com/lucas2kdk/kubernetes/commit/777f4aa3f10ec9f0dd4eb825128ecd6b5f31aade)), closes [#47](https://github.com/lucas2kdk/kubernetes/issues/47)
+* **policies:** add seccomp RuntimeDefault mutate (CIS 5.7.2) ([#68](https://github.com/lucas2kdk/kubernetes/issues/68)) ([6d1b59a](https://github.com/lucas2kdk/kubernetes/commit/6d1b59afead594b5984480705f1aedced2e215ad))
+* **policies:** restrict ClusterIssuer to platform namespaces ([#61](https://github.com/lucas2kdk/kubernetes/issues/61)) ([8df3634](https://github.com/lucas2kdk/kubernetes/commit/8df36341eafe51d491f2e439b76a8c0da7972b65)), closes [#53](https://github.com/lucas2kdk/kubernetes/issues/53)
+
 ## [1.3.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.2.0...platform/v1.3.0) (2026-06-14)
 
 
