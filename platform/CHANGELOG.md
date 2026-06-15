@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.5.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.4.0...platform/v1.5.0) (2026-06-15)
+
+
+### Features
+
+* **flux:** Discord alert on drift of Flux-managed resources ([#72](https://github.com/lucas2kdk/kubernetes/issues/72)) ([9adec29](https://github.com/lucas2kdk/kubernetes/commit/9adec29fe757d2fcc645fdb630704c5b7533be0e))
+* **gateway:** TLS on the Cilium Gateway for draw.rosenvold.tech ([#74](https://github.com/lucas2kdk/kubernetes/issues/74)) ([00e389e](https://github.com/lucas2kdk/kubernetes/commit/00e389efe5178885d199da23ba18ac67553708b2))
+* **monitoring:** add OOMKilled and Longhorn volume-full alerts ([#73](https://github.com/lucas2kdk/kubernetes/issues/73)) ([0067003](https://github.com/lucas2kdk/kubernetes/commit/0067003bc23c604a9e067ad3b0de307450301771))
+
+
+### Bug Fixes
+
+* **network:** allow the Cilium Gateway proxy through default-deny ([#71](https://github.com/lucas2kdk/kubernetes/issues/71)) ([39ac386](https://github.com/lucas2kdk/kubernetes/commit/39ac38667e40d681f85650e1672b242b75386918))
+
 ## [1.4.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.3.0...platform/v1.4.0) (2026-06-15)
 
 
