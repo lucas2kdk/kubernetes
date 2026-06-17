@@ -36,6 +36,23 @@ release+promote flow, tenants reconcile from `main` directly (see
 [docs/architecture.md](docs/architecture.md)). A change spanning both layers
 (e.g. add an operator, then a tenant instance of it) goes live in two stages.
 
+### Datastore & storage operators (platform-provided capability)
+
+The platform runs three operators so tenants can declare their own stateful
+backends — the operators own no data, the instance CRs live in the tenant:
+
+- **CloudNativePG** (`platform/base/cloudnative-pg`, ns `cnpg-system`) —
+  `postgresql.cnpg.io` `Cluster`/`Database` CRDs for Postgres.
+- **Redis operator** (`platform/base/redis-operator`, ns `redis-operator`,
+  OT-Container-Kit) — `redis.redis.opstreelabs.in` `Redis` CRD.
+- **MinIO operator** (`platform/base/minio-operator`, ns `minio-operator`) —
+  `minio.min.io` `Tenant` CRD for S3-compatible object storage.
+
+All three operator namespaces are in the four namespace-exclusion lists (they
+reach the instance pods they manage in tenant namespaces). The `gitlab` tenant
+is the first consumer of all three. New stateful tenant → declare the CR against
+the operator; don't hand-roll a StatefulSet.
+
 ## Validate before you finish
 
 Every change must pass the same gate CI runs. Run it locally:
@@ -137,3 +154,7 @@ page so they don't drift.
 - Work on a branch, never commit directly to `main`.
 - Run `just check` and make it pass before opening a PR.
 - Commit/push only when asked.
+- **GitHub CLI must use the `lucas2kdk` account** — it owns write access to this
+  repo. If `gh` PR/merge calls fail with "must be a collaborator", the active
+  account drifted (e.g. to `lucas-christensen`, which is read-only here); fix it
+  with `gh auth switch --user lucas2kdk`.
