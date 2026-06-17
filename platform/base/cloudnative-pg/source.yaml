@@ -1,0 +1,10 @@
+# CloudNativePG chart repo. Centralized in flux-system with the other platform
+# sources (tenants can't reference it cross-namespace).
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: cloudnative-pg
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://cloudnative-pg.github.io/charts

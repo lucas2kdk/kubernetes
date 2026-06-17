@@ -25,6 +25,30 @@ Adding a region is `flux bootstrap` (writes `flux-system/`) + a `cluster-vars.ya
 + a `kustomization.yaml` listing components — the reconcile graph is referenced,
 never copied.
 
+### Platform vs tenant: the dividing line
+
+**Platform provides capabilities; tenants are the instances that consume them.**
+This is the rule for deciding where a new thing belongs:
+
+- If it gives tenants the ability to create their own resources — an **operator**,
+  a shared controller, or cluster-wide infrastructure (ingress, secrets, certs,
+  storage classes) — it is **platform** (`platform/{fleet,base,overlays}`).
+- If it is a concrete **instance** of a workload — an app Deployment, a database
+  `Cluster` CR, a tenant's Redis — it is a **tenant** (`tenants/{base,overlays}`).
+
+The sharpest test is the operator/CR split: **the operator is platform; the CRs
+that operator reconciles are tenant.** Installing the CloudNativePG or Redis
+operator so any tenant can declare a Postgres/Redis is platform. A bare
+StatefulSet running Redis for a single app is *not* platform — it's a tenant
+workload. As the maintainer puts it: *"giving the tenant the resources to make
+their own things is platform."*
+
+Because platform ships via the OCI release+promote flow and tenants reconcile
+from `main` directly (see below), a change that spans both layers — add an
+operator, then a tenant instance that uses it — goes live in **two stages**:
+release+promote the operator first so its CRDs exist on the cluster, then merge
+the tenant CRs.
+
 ## Two sync sources: git `main` vs the OCI release
 
 A cluster does **not** reconcile everything from one place. There are two

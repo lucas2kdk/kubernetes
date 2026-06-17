@@ -1,0 +1,28 @@
+# Redis operator: provides the redis.redis.opstreelabs.in CRDs (Redis,
+# RedisReplication, …) so tenants can declare their own Redis. The GitLab tenant
+# uses a standalone Redis CR (chart 10 / GitLab 19 dropped the bundled Redis).
+# webhook stays disabled (default) so there's no cert-manager dependency.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: redis-operator
+  namespace: redis-operator
+spec:
+  interval: 1h
+  releaseName: redis-operator
+  chart:
+    spec:
+      chart: redis-operator
+      version: "0.24.0" # Renovate-managed
+      sourceRef:
+        kind: HelmRepository
+        name: redis-operator
+        namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
