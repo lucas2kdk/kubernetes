@@ -41,17 +41,38 @@ spec:
       ingress:
         enabled: false # we ship our own tailscale Ingress (ingress.yaml), not the chart's
         configureCertmanager: false # platform cert-manager / Tailscale handles TLS
+      # Chart 10 (GitLab 19) defaults to an envoy-gateway / Gateway-API ingress
+      # stack whose subchart installs cluster-scoped Gateway API CRDs — which the
+      # namespace-scoped tenant SA cannot (and shouldn't) create. We front GitLab
+      # with the Tailscale operator instead, so disable the chart's gateway whole.
+      gatewayApi:
+        enabled: false
+        installEnvoy: false
       shell:
         port: 22 # matches the Tailscale LoadBalancer in ssh-service.yaml
+      # Render ServiceMonitor/PodMonitor objects so the platform
+      # kube-prometheus-stack scrapes GitLab. The CRDs already exist cluster-wide
+      # and Prometheus discovers ServiceMonitors across namespaces; the
+      # allow-ingress-from-monitoring clusterwide policy lets it reach gitlab pods.
+      # (We still keep the chart's own bundled Prometheus off — see prometheus.install.)
+      monitoring:
+        enabled: true
       # Initial root password sourced from Vault via external-secret.yaml.
       initialRootPassword:
         secret: gitlab-initial-root-password
         key: password
-    certmanager:
-      install: false
+    # Use the platform cert-manager, not the chart's bundled one (its subchart
+    # also installs cluster-scoped CRDs the tenant SA can't create).
+    # installCertmanager supersedes the old certmanager.install key in chart 10.
+    installCertmanager: false
     nginx-ingress:
       enabled: false
     prometheus:
       install: false
     gitlab-runner:
-      install: false # add later if CI runners are wanted
+      # Bundled runner, Kubernetes executor (chart default): one ephemeral pod
+      # per CI job, so capacity scales with the node. The parent chart
+      # auto-registers it against the in-cluster GitLab; rbac.create spawns the
+      # job pods. CI jobs need internet egress — see allow-egress-internet in
+      # netpol.yaml.
+      install: true

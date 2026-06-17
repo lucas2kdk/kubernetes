@@ -22,3 +22,27 @@ spec:
               protocol: TCP
             - port: "2222"
               protocol: TCP
+---
+# Internet egress for the gitlab namespace. CI job pods (kubernetes executor)
+# and GitLab itself need to reach external hosts (git clone, apt/npm/pip, repo
+# imports, etc.) over HTTP/S — default-deny + the Kyverno baseline only permit
+# same-namespace + DNS. The cloud-metadata endpoint stays blocked by the
+# separate clusterwide deny-cloud-metadata policy (egressDeny wins).
+# ponytail: 80/443 covers the vast majority of CI traffic — widen ports if a
+# job needs something else.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-egress-internet
+  namespace: gitlab
+spec:
+  endpointSelector: {}
+  egress:
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
