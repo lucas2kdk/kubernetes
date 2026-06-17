@@ -4,11 +4,12 @@
 # gitlab-postgres-app Secret (user "gitlab" + password) that the HelmRelease
 # points global.psql at.
 #
-# GitLab 17+ uses database decomposition: a "main" and a "ci" database. main is
-# created here by initdb; ci is the Database CR below. Both need the pg_trgm and
-# btree_gist extensions, which a non-superuser owner can't create — so the
-# superuser pre-creates them (postInitApplicationSQL for main, the Database CR's
-# extensions for ci). Postgres pinned to 16 (GitLab 19's supported major).
+# Single database (gitlabhq_production): GitLab's "main" and "ci" connections
+# both point here — a separate CI database is gated behind
+# GITLAB_ALLOW_SEPARATE_CI_DATABASE and flagged not-production-ready. The
+# pg_trgm and btree_gist extensions can't be created by the non-superuser owner,
+# so the superuser pre-creates them via postInitApplicationSQL. Postgres is
+# pinned to 17 (GitLab 19's minimum).
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -26,21 +27,3 @@ spec:
       postInitApplicationSQL:
         - CREATE EXTENSION IF NOT EXISTS pg_trgm;
         - CREATE EXTENSION IF NOT EXISTS btree_gist;
----
-# The decomposed "ci" database, owned by the same gitlab role; extensions
-# applied by the operator as superuser.
-apiVersion: postgresql.cnpg.io/v1
-kind: Database
-metadata:
-  name: gitlab-ci
-  namespace: gitlab
-spec:
-  cluster:
-    name: gitlab-postgres
-  name: gitlabhq_production_ci
-  owner: gitlab
-  extensions:
-    - name: pg_trgm
-      ensure: present
-    - name: btree_gist
-      ensure: present
