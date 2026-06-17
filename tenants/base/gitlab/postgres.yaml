@@ -1,0 +1,46 @@
+# Postgres for GitLab, declared via the platform CloudNativePG operator (chart 10
+# / GitLab 19 dropped the bundled DB). Single instance (single-node cluster);
+# PVC lands on the default longhorn StorageClass. CNPG generates the
+# gitlab-postgres-app Secret (user "gitlab" + password) that the HelmRelease
+# points global.psql at.
+#
+# GitLab 17+ uses database decomposition: a "main" and a "ci" database. main is
+# created here by initdb; ci is the Database CR below. Both need the pg_trgm and
+# btree_gist extensions, which a non-superuser owner can't create — so the
+# superuser pre-creates them (postInitApplicationSQL for main, the Database CR's
+# extensions for ci). Postgres pinned to 16 (GitLab 19's supported major).
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: gitlab-postgres
+  namespace: gitlab
+spec:
+  instances: 1
+  imageName: ghcr.io/cloudnative-pg/postgresql:16 # Renovate-managed
+  storage:
+    size: 20Gi
+  bootstrap:
+    initdb:
+      database: gitlabhq_production
+      owner: gitlab
+      postInitApplicationSQL:
+        - CREATE EXTENSION IF NOT EXISTS pg_trgm;
+        - CREATE EXTENSION IF NOT EXISTS btree_gist;
+---
+# The decomposed "ci" database, owned by the same gitlab role; extensions
+# applied by the operator as superuser.
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: gitlab-ci
+  namespace: gitlab
+spec:
+  cluster:
+    name: gitlab-postgres
+  name: gitlabhq_production_ci
+  owner: gitlab
+  extensions:
+    - name: pg_trgm
+      ensure: present
+    - name: btree_gist
+      ensure: present

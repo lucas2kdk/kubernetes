@@ -48,6 +48,7 @@ spec:
       gatewayApi:
         enabled: false
         installEnvoy: false
+        configureCertmanager: false # else the certmanager-issuer subchart still renders
       shell:
         port: 22 # matches the Tailscale LoadBalancer in ssh-service.yaml
       # Render ServiceMonitor/PodMonitor objects so the platform
@@ -61,6 +62,61 @@ spec:
       initialRootPassword:
         secret: gitlab-initial-root-password
         key: password
+      # External Postgres: the CloudNativePG cluster in postgres.yaml. The "main"
+      # and decomposed "ci" databases share the gitlab role, so the same
+      # CNPG-generated secret (gitlab-postgres-app) authenticates both. Host is
+      # the CNPG read-write Service.
+      psql:
+        password:
+          useSecret: true
+          secret: gitlab-postgres-app
+          key: password
+        main:
+          host: gitlab-postgres-rw
+          port: 5432
+          username: gitlab
+          database: gitlabhq_production
+        ci:
+          host: gitlab-postgres-rw
+          port: 5432
+          username: gitlab
+          database: gitlabhq_production_ci
+      # External Redis: the operator-managed instance in redis.yaml. Passwordless
+      # (see the comment there), so disable auth.
+      redis:
+        host: gitlab-redis
+        port: 6379
+        auth:
+          enabled: false
+      # External object storage (the MinIO Tenant in minio.yaml). Consolidated
+      # form: one connection secret (object-storage-secrets.yaml) + a bucket per
+      # data type. Registry and backups need their own secret formats (below).
+      appConfig:
+        object_store:
+          enabled: true
+          proxy_download: true
+          connection:
+            secret: gitlab-objectstore-connection
+            key: connection
+        lfs:
+          bucket: gitlab-lfs
+        artifacts:
+          bucket: gitlab-artifacts
+        uploads:
+          bucket: gitlab-uploads
+        packages:
+          bucket: gitlab-packages
+        externalDiffs:
+          bucket: gitlab-mr-diffs
+        terraformState:
+          bucket: gitlab-terraform-state
+        ciSecureFiles:
+          bucket: gitlab-ci-secure-files
+        dependencyProxy:
+          bucket: gitlab-dependency-proxy
+        backups:
+          bucket: gitlab-backups
+          tmpBucket: gitlab-tmp
     # Use the platform cert-manager, not the chart's bundled one (its subchart
     # also installs cluster-scoped CRDs the tenant SA can't create).
     # installCertmanager supersedes the old certmanager.install key in chart 10.
@@ -76,3 +132,17 @@ spec:
       # job pods. CI jobs need internet egress — see allow-egress-internet in
       # netpol.yaml.
       install: true
+    # Container registry object storage: docker/distribution S3 driver, its own
+    # secret format (object-storage-secrets.yaml).
+    registry:
+      storage:
+        secret: gitlab-registry-storage
+        key: config
+    # Toolbox backups to object storage: s3cmd config secret.
+    gitlab:
+      toolbox:
+        backups:
+          objectStorage:
+            config:
+              secret: gitlab-backup-storage
+              key: config
