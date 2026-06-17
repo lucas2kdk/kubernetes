@@ -1,0 +1,23 @@
+# Let the Cilium Gateway proxy reach the app through default-deny. As a tenant
+# namespace, excalidraw gets the Kyverno-generated baseline CNP (same-namespace
+# + DNS) and nothing else, so external requests forwarded by the Gateway's Envoy
+# proxy would be dropped. The proxy runs under Cilium's reserved `ingress`
+# identity (see platform/base/network/allow-gateway-proxy.yaml for the egress
+# side); this allows it in on :80. Cilium policies are additive — this stacks on
+# the baseline CNP, it does not replace it.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-gateway-ingress
+  namespace: excalidraw
+spec:
+  endpointSelector:
+    matchLabels:
+      app: excalidraw
+  ingress:
+    - fromEntities:
+        - ingress
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP

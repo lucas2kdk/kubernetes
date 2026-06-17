@@ -1,10 +1,14 @@
 # Per-cluster tenant presence for prod-fsn — which tenant apps run here. The
-# only diff from base is the ingress host (hello-world-prod) so the tailscale
-# hostname is unique per cluster.
+# hello-world diff from base is the ingress host (hello-world-prod) so the
+# tailscale hostname is unique per cluster.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
+  # excalidraw is prod-only: it is exposed through the Cilium Gateway, which only
+  # exists on prod-fsn. Pulled here rather than from tenants/base so test-home
+  # (no Gateway) doesn't get an unroutable workload.
+  - ../../base/excalidraw
 patches:
   - target:
       group: helm.toolkit.fluxcd.io

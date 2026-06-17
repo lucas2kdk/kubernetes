@@ -5,6 +5,7 @@ resources:
   - ip-pool.yaml
   - certificate.yaml
   - gateway.yaml
-  - excalidraw.yaml
-  - httproute.yaml
+  # http-redirect (HTTP->HTTPS) stays here: it's listener-level config bound to
+  # the http listener, not the app. The app route now lives with the excalidraw
+  # tenant (tenants/base/excalidraw/httproute.yaml).
   - http-redirect.yaml

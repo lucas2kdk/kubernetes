@@ -1,0 +1,13 @@
+# excalidraw tenant base: namespace + workload + its Gateway route + the CNP
+# that lets the Gateway proxy in. No SA/RBAC or Flux source like hello-world —
+# these are plain manifests (no per-tenant HelmRelease), applied by the tenants
+# Flux Kustomization. Only prod-fsn runs it (the Cilium Gateway is prod-only),
+# so it is wired in from tenants/overlays/prod-fsn, not tenants/base.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: excalidraw
+resources:
+  - namespace.yaml
+  - deployment.yaml
+  - httproute.yaml
+  - netpol.yaml
