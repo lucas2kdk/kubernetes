@@ -13,6 +13,29 @@ spec:
   kubernetesConfig:
     image: quay.io/opstree/redis:v7.0.15 # Renovate-managed
     imagePullPolicy: IfNotPresent
+    resources: # Kyverno require-requests
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+  # fsGroup makes the (root-owned) longhorn PVC writable by the non-root redis
+  # process — without it redis can't create its append-only dir and crashloops.
+  # The container securityContext satisfies the restricted PodSecurity / Kyverno.
+  podSecurityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    runAsNonRoot: true
+  securityContext:
+    runAsUser: 1000
+    runAsNonRoot: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
   storage:
     volumeClaimTemplate:
       spec:
