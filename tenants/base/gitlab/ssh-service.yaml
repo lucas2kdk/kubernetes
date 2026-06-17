@@ -1,0 +1,21 @@
+# Git-over-SSH on the tailnet only. The Tailscale operator picks up the
+# LoadBalancer Service (loadBalancerClass: tailscale) and exposes it as a TCP
+# proxy device "gitlab-ssh", reachable at gitlab-ssh.<tailnet>.ts.net:22 — no
+# public IP. Selects the chart's gitlab-shell pods directly (the chart's own
+# Service is ClusterIP); global.shell.port=22 in release.yaml advertises this.
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab-ssh
+  namespace: gitlab
+spec:
+  type: LoadBalancer
+  loadBalancerClass: tailscale
+  selector:
+    app: gitlab-shell
+    release: gitlab
+  ports:
+    - name: ssh
+      port: 22
+      targetPort: 2222 # gitlab-shell listens on 2222 in-pod
+      protocol: TCP

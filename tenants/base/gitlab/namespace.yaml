@@ -1,0 +1,8 @@
+# GitLab CE tenant namespace. Deliberately NO platform.io/managed label: GitLab
+# is a tenant, so it stays governed by the cluster default-deny and the
+# Kyverno-generated baseline CiliumNetworkPolicy (same-namespace + DNS). The
+# only extra ingress it gets is the scoped netpol.yaml (from the tailscale proxy).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gitlab

@@ -9,6 +9,8 @@ resources:
   # exists on prod-fsn. Pulled here rather than from tenants/base so test-home
   # (no Gateway) doesn't get an unroutable workload.
   - ../../base/excalidraw
+  # GitLab CE is prod-only: heavy single-node workload exposed on the prod tailnet.
+  - ../../base/gitlab
 patches:
   - target:
       group: helm.toolkit.fluxcd.io

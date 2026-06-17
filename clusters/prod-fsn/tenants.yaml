@@ -16,3 +16,9 @@ spec:
   path: ./tenants/overlays/prod-fsn
   prune: true
   wait: true # block dependents until tenant apps are Ready
+  postBuild:
+    substituteFrom:
+      # ${tailnet} -> the GitLab tenant's tailnet hostnames (gitlab/gitlab-ssh
+      # .<tailnet>.ts.net). fleet-vars is fleet-wide; referenced cluster-wide.
+      - kind: ConfigMap
+        name: fleet-vars

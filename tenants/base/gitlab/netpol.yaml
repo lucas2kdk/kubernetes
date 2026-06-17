@@ -1,0 +1,24 @@
+# Let the Tailscale proxy reach GitLab through default-deny. As a tenant
+# namespace, gitlab gets only the Kyverno-generated baseline CNP (same-namespace
+# + DNS), so traffic forwarded by the Tailscale operator's proxy pods (which run
+# in the tailscale namespace) would be dropped. There is no clusterwide
+# allow-ingress-from-tailscale policy, so this scoped CNP allows it in — to the
+# webservice (HTTP :8181) and gitlab-shell (SSH :2222). Cilium policies are
+# additive: this stacks on the baseline, it does not replace it.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-tailscale-ingress
+  namespace: gitlab
+spec:
+  endpointSelector: {} # any gitlab pod; the source restriction below is the real fence
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: tailscale
+      toPorts:
+        - ports:
+            - port: "8181"
+              protocol: TCP
+            - port: "2222"
+              protocol: TCP
