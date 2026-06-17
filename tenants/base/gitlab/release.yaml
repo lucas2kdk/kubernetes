@@ -134,6 +134,10 @@ spec:
       # job pods. CI jobs need internet egress — see allow-egress-internet in
       # netpol.yaml.
       install: true
+      # Register against the in-cluster webservice, not the external tailnet host
+      # (gitlab.<tailnet>.ts.net) — that MagicDNS name isn't resolvable by the
+      # cluster CoreDNS, so registration fails with "no such host". Internal HTTP.
+      gitlabUrl: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181
       rbac:
         # The chart's default runner Role grants core-group */* — which the
         # namespaced-admin tenant SA can't create (RBAC escalation prevention:
