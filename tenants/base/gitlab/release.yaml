@@ -62,10 +62,12 @@ spec:
       initialRootPassword:
         secret: gitlab-initial-root-password
         key: password
-      # External Postgres: the CloudNativePG cluster in postgres.yaml. The "main"
-      # and decomposed "ci" databases share the gitlab role, so the same
-      # CNPG-generated secret (gitlab-postgres-app) authenticates both. Host is
-      # the CNPG read-write Service.
+      # External Postgres: the CloudNativePG cluster in postgres.yaml. Single
+      # database: GitLab's "ci" connection points at the SAME database as "main"
+      # (gitlabhq_production). A *separate* CI database is gated behind
+      # GITLAB_ALLOW_SEPARATE_CI_DATABASE and flagged "not ready for production",
+      # so we use the supported single-database layout. Host is the CNPG
+      # read-write Service; the CNPG-generated gitlab-postgres-app secret auths.
       psql:
         password:
           useSecret: true
@@ -80,7 +82,7 @@ spec:
           host: gitlab-postgres-rw
           port: 5432
           username: gitlab
-          database: gitlabhq_production_ci
+          database: gitlabhq_production
       # External Redis: the operator-managed instance in redis.yaml. Passwordless
       # (see the comment there), so disable auth.
       redis:
