@@ -94,6 +94,19 @@ spec:
       # form: one connection secret (object-storage-secrets.yaml) + a bucket per
       # data type. Registry and backups need their own secret formats (below).
       appConfig:
+        # SSO via tsidp (the platform Tailscale OIDC provider). The provider YAML
+        # is rendered into the gitlab-oidc-provider Secret (oidc-secret.yaml).
+        # allowSingleSignOn auto-creates accounts on first login; autoLinkUser
+        # links to an existing account by email. blockAutoCreatedUsers stays
+        # false since only tailnet identities can authenticate through tsidp.
+        omniauth:
+          enabled: true
+          allowSingleSignOn: ["openid_connect"]
+          blockAutoCreatedUsers: false
+          autoLinkUser: ["openid_connect"]
+          providers:
+            - secret: gitlab-oidc-provider
+              key: provider
         object_store:
           enabled: true
           proxy_download: true
