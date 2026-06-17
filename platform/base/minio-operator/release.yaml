@@ -1,0 +1,29 @@
+# MinIO operator: provides the minio.min.io Tenant CRD so tenants can declare
+# their own S3-compatible object storage. The GitLab tenant uses it — chart 10 /
+# GitLab 19 dropped bundled object storage and now requires external S3 for
+# artifacts, LFS, uploads, packages, the registry and backups. The operator owns
+# no buckets; the Tenant CR lives in the gitlab tenant.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: minio-operator
+  namespace: minio-operator
+spec:
+  interval: 1h
+  releaseName: minio-operator
+  chart:
+    spec:
+      chart: operator
+      version: "7.1.1" # Renovate-managed
+      sourceRef:
+        kind: HelmRepository
+        name: minio-operator
+        namespace: flux-system
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3

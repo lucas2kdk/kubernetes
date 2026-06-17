@@ -74,9 +74,10 @@ spec:
                 # Cilium Gateway API trial: platform-managed, manages its own
                 # connectivity — no baseline CNP. Lockstep with default-deny.
                 - cilium-gateway
-                # DB operators; lockstep with default-deny.
+                # DB / storage operators; lockstep with default-deny.
                 - cnpg-system
                 - redis-operator
+                - minio-operator
       generate:
         apiVersion: cilium.io/v2
         kind: CiliumNetworkPolicy

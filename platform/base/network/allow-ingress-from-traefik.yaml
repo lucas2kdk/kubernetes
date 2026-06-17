@@ -48,9 +48,10 @@ spec:
           # traffic (e.g. longhorn-manager → instance-manager gRPC on :8500).
           - longhorn-system
           - cilium-gateway # Cilium Gateway API trial; lockstep with default-deny.
-          # DB operators; lockstep with default-deny.
+          # DB / storage operators; lockstep with default-deny.
           - cnpg-system
           - redis-operator
+          - minio-operator
   ingress:
     - fromEndpoints:
         - matchLabels:

@@ -1,0 +1,10 @@
+# MinIO operator namespace. platform.io/managed exempts it from the tenant
+# guardrails (Kyverno admission + Cilium default-deny) — the operator reaches the
+# kube-apiserver and the MinIO Tenant pods it manages in tenant namespaces (e.g.
+# gitlab). Also added by hand to the four namespace-exclusion lists.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: minio-operator
+  labels:
+    platform.io/managed: "true"

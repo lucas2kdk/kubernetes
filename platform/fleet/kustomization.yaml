@@ -14,6 +14,7 @@ resources:
   - headlamp.yaml
   - kube-prometheus-stack.yaml
   - kyverno-policies.yaml
+  - minio-operator.yaml
   - kyverno.yaml
   - monitoring-extras.yaml
   - network-policies.yaml
