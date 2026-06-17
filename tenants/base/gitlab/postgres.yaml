@@ -16,7 +16,7 @@ metadata:
   namespace: gitlab
 spec:
   instances: 1
-  imageName: ghcr.io/cloudnative-pg/postgresql:16 # Renovate-managed
+  imageName: ghcr.io/cloudnative-pg/postgresql:17 # Renovate-managed (GitLab 19 requires PG >= 17)
   storage:
     size: 20Gi
   bootstrap:
