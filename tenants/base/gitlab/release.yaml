@@ -1,0 +1,57 @@
+# GitLab CE via the official cloud-native umbrella chart. Bundled
+# Postgres/Redis/MinIO/Gitaly are kept; the chart's own nginx-ingress,
+# cert-manager and Prometheus are DISABLED so GitLab coexists with the platform
+# (we expose it via the Tailscale operator and scrape via kube-prometheus-stack
+# later). All PVCs land on the default StorageClass, which is longhorn.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gitlab
+  namespace: gitlab
+spec:
+  interval: 1h
+  serviceAccountName: gitlab # impersonate the tenant SA -> stays within tenant RBAC
+  releaseName: gitlab
+  chart:
+    spec:
+      chart: gitlab
+      version: "10.0.2" # Renovate-managed (appVersion v19.0.2)
+      sourceRef:
+        kind: HelmRepository
+        name: gitlab
+        namespace: gitlab
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  # GitLab takes a long time to install on a single node; give it room.
+  timeout: 30m
+  values:
+    global:
+      hosts:
+        # ${tailnet} is substituted by Flux from the fleet-vars ConfigMap (the
+        # substituteFrom was added to clusters/prod-fsn/tenants.yaml for this).
+        domain: ${tailnet}.ts.net
+        https: true # emit https:// URLs; TLS actually terminates at the Tailscale proxy
+        gitlab:
+          name: gitlab.${tailnet}.ts.net
+        ssh: gitlab-ssh.${tailnet}.ts.net # advertised git clone host (ssh-service.yaml)
+      ingress:
+        enabled: false # we ship our own tailscale Ingress (ingress.yaml), not the chart's
+        configureCertmanager: false # platform cert-manager / Tailscale handles TLS
+      shell:
+        port: 22 # matches the Tailscale LoadBalancer in ssh-service.yaml
+      # Initial root password sourced from Vault via external-secret.yaml.
+      initialRootPassword:
+        secret: gitlab-initial-root-password
+        key: password
+    certmanager:
+      install: false
+    nginx-ingress:
+      enabled: false
+    prometheus:
+      install: false
+    gitlab-runner:
+      install: false # add later if CI runners are wanted

@@ -1,0 +1,11 @@
+# Official GitLab cloud-native chart repo. Lives in the gitlab namespace (not
+# flux-system) so the flux-multi-tenancy ClusterPolicy lets the HelmRelease
+# reference it — that guardrail blocks cross-namespace sourceRefs for tenants.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: gitlab
+  namespace: gitlab
+spec:
+  interval: 1h
+  url: https://charts.gitlab.io

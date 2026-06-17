@@ -1,0 +1,13 @@
+# GitLab CE tenant base. namespace forces every resource into gitlab.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: gitlab
+resources:
+  - namespace.yaml
+  - rbac.yaml
+  - source.yaml
+  - release.yaml
+  - external-secret.yaml
+  - ingress.yaml
+  - ssh-service.yaml
+  - netpol.yaml
