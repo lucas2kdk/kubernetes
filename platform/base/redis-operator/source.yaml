@@ -1,0 +1,10 @@
+# OT-Container-Kit chart repo for the Redis operator. Centralized in flux-system
+# with the other platform sources.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: redis-operator
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://ot-container-kit.github.io/helm-charts

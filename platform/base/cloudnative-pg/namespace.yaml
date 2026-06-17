@@ -1,0 +1,11 @@
+# CloudNativePG operator namespace. platform.io/managed exempts it from the
+# tenant guardrails (Kyverno admission + Cilium default-deny) — the operator
+# must reach the kube-apiserver and the Postgres instance pods it manages in
+# tenant namespaces (e.g. gitlab), which default-deny would otherwise drop.
+# Also added by hand to the four namespace-exclusion lists (see README).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cnpg-system
+  labels:
+    platform.io/managed: "true"

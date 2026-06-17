@@ -1,0 +1,10 @@
+# CloudNativePG operator. Provides the postgresql.cnpg.io CRDs that tenants
+# (currently the gitlab tenant) use to declare their own Postgres clusters. No
+# dependsOn: ships no ServiceMonitor by default and has no platform prerequisite.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: cloudnative-pg
+  namespace: flux-system
+spec:
+  path: ./base/cloudnative-pg

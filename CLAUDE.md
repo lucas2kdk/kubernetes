@@ -16,6 +16,26 @@ per-topic deep reference ([architecture](docs/architecture.md),
 [policies](docs/policies.md), [secrets-and-identity](docs/secrets-and-identity.md),
 [monitoring](docs/monitoring.md), [operations](docs/operations.md)).
 
+## Platform vs tenant: the dividing line
+
+**Platform provides capabilities; tenants are the instances that consume them.**
+
+If a thing gives tenants the ability to create their own resources — an
+operator, a shared controller, cluster-wide infrastructure (ingress, secrets,
+certs, storage classes) — it is **platform**. If it is a concrete instance of a
+workload — a Deployment, an app, a database `Cluster` CR — it is a **tenant**.
+
+Rule of thumb: **the operator is platform; the CRs that operator reconciles are
+tenant.** Installing the CloudNativePG or Redis operator (so any tenant can
+declare a Postgres/Redis) is platform. A bare StatefulSet running Redis for one
+app is *not* platform — that's a tenant workload. "Giving the tenant the
+resources to make their own things is platform."
+
+This also maps to the two sync sources: platform ships via the OCI
+release+promote flow, tenants reconcile from `main` directly (see
+[docs/architecture.md](docs/architecture.md)). A change spanning both layers
+(e.g. add an operator, then a tenant instance of it) goes live in two stages.
+
 ## Validate before you finish
 
 Every change must pass the same gate CI runs. Run it locally:
