@@ -151,6 +151,34 @@ spec:
       # (gitlab.<tailnet>.ts.net) — that MagicDNS name isn't resolvable by the
       # cluster CoreDNS, so registration fails with "no such host". Internal HTTP.
       gitlabUrl: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181
+      runners:
+        # Make every CI job pod (build + helper) satisfy the restricted
+        # PodSecurity profile so they're admitted once that policy is enforced —
+        # and so the rootless-builder path (e.g. moby/buildkit:rootless on uid
+        # 1000) is the natural way to build images here, no privileged/DinD. The
+        # seccompProfile is added cluster-wide by the add-seccomp-runtime-default
+        # Kyverno mutate, so it isn't set here.
+        config: |
+          [[runners]]
+            [runners.kubernetes]
+              image = "ubuntu:22.04"
+              [runners.kubernetes.pod_security_context]
+                run_as_non_root = true
+                run_as_user = 1000
+                run_as_group = 1000
+                fs_group = 1000
+              [runners.kubernetes.build_container_security_context]
+                run_as_non_root = true
+                run_as_user = 1000
+                allow_privilege_escalation = false
+                [runners.kubernetes.build_container_security_context.capabilities]
+                  drop = ["ALL"]
+              [runners.kubernetes.helper_container_security_context]
+                run_as_non_root = true
+                run_as_user = 1000
+                allow_privilege_escalation = false
+                [runners.kubernetes.helper_container_security_context.capabilities]
+                  drop = ["ALL"]
       rbac:
         # The chart's default runner Role grants core-group */* — which the
         # namespaced-admin tenant SA can't create (RBAC escalation prevention:
