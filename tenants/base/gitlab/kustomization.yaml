@@ -12,6 +12,7 @@ resources:
   - minio.yaml
   - external-secret.yaml
   - object-storage-secrets.yaml
+  - oidc-secret.yaml
   - ingress.yaml
   - ssh-service.yaml
   - netpol.yaml
