@@ -132,6 +132,22 @@ spec:
       # job pods. CI jobs need internet egress — see allow-egress-internet in
       # netpol.yaml.
       install: true
+      rbac:
+        # The chart's default runner Role grants core-group */* — which the
+        # namespaced-admin tenant SA can't create (RBAC escalation prevention:
+        # you can't grant what you don't hold). Scope it to exactly what the
+        # Kubernetes executor needs; every rule here is a subset of the `admin`
+        # ClusterRole bound to the gitlab SA, so the grant is allowed.
+        rules:
+          - apiGroups: [""]
+            resources: ["pods", "pods/exec", "pods/attach", "configmaps", "secrets", "services"]
+            verbs: ["get", "list", "watch", "create", "patch", "update", "delete"]
+          - apiGroups: [""]
+            resources: ["pods/log"]
+            verbs: ["get", "list", "watch"]
+          - apiGroups: [""]
+            resources: ["events"]
+            verbs: ["list", "watch"]
     # Container registry object storage: docker/distribution S3 driver, its own
     # secret format (object-storage-secrets.yaml).
     registry:
