@@ -1,0 +1,10 @@
+# MinIO operator. Provides the minio.min.io Tenant CRD that tenants use to
+# declare S3-compatible object storage (currently the gitlab tenant). No
+# dependsOn: ships no ServiceMonitor by default and has no platform prerequisite.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: minio-operator
+  namespace: flux-system
+spec:
+  path: ./base/minio-operator

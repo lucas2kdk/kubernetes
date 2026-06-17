@@ -1,0 +1,8 @@
+# MinIO operator base (controller + Tenant CRD). MinIO Tenant CRs live in the
+# tenants that need object storage, not here.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - source.yaml
+  - release.yaml

@@ -58,11 +58,13 @@ spec:
           # Cilium Gateway API trial (platform/base/cilium-gateway): the Gateway's
           # Envoy proxy pod runs here and must not be caught by default-deny.
           - cilium-gateway
-          # DB operators (platform/base/{cloudnative-pg,redis-operator}): each
-          # operator reaches the Postgres/Redis instance pods it manages in tenant
-          # namespaces (e.g. gitlab), which default-deny egress would otherwise drop.
+          # DB / storage operators (platform/base/{cloudnative-pg,redis-operator,
+          # minio-operator}): each operator reaches the Postgres/Redis/MinIO
+          # instance pods it manages in tenant namespaces (e.g. gitlab), which
+          # default-deny egress would otherwise drop.
           - cnpg-system
           - redis-operator
+          - minio-operator
   ingress:
     # Allow node-level traffic (kubelet health/liveness probes) and the API server.
     - fromEntities:
