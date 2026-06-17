@@ -14,7 +14,8 @@ Read [`README.md`](README.md) for the quickstart and [`docs/`](docs/) for the
 per-topic deep reference ([architecture](docs/architecture.md),
 [components](docs/components.md), [networking](docs/networking.md),
 [policies](docs/policies.md), [secrets-and-identity](docs/secrets-and-identity.md),
-[monitoring](docs/monitoring.md), [operations](docs/operations.md)).
+[monitoring](docs/monitoring.md), [operations](docs/operations.md),
+[gitlab-ci-image-builds](docs/gitlab-ci-image-builds.md)).
 
 ## Platform vs tenant: the dividing line
 

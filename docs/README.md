@@ -26,6 +26,7 @@ it runs.
 | [operations.md](operations.md) | Day-2 operations — bootstrap, reconcile, the full `just check` gate (12 recipes), the two-tier PR pipeline, post-merge and drift-detection workflows, adding clusters/components, and access. |
 | [testing-strategy.md](testing-strategy.md) | BDD/TDD test strategy — the full catalogue of 29 test cases (structural coherence, policy gaps, security, observability), their CI tier, implementation status, and the rot-prone patterns to avoid. |
 | [tools.md](tools.md) | The local tooling (`just`, `kustomize`, `kubeconform`, `kyverno`, `gitleaks`, `trivy`, …) the validation recipes use. |
+| [gitlab-ci-image-builds.md](gitlab-ci-image-builds.md) | Building container images in GitLab CI — why no DinD, the restricted-compliant runner config, and the rootless BuildKit `.gitlab-ci.yml` pattern. |
 
 ## How this fits together
 
