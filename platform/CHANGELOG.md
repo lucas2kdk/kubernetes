@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.2](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.5.1...platform/v1.5.2) (2026-06-17)
+
+
+### Miscellaneous Chores
+
+* release platform 1.5.2 ([#82](https://github.com/lucas2kdk/kubernetes/issues/82)) ([c8b05fe](https://github.com/lucas2kdk/kubernetes/commit/c8b05fe386e96dbdbc90b27630f9ea0190208e70))
+
 ## [1.5.1](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.5.0...platform/v1.5.1) (2026-06-15)
 
 
