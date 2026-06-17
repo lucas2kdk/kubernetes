@@ -1,0 +1,23 @@
+# Redis for GitLab, declared via the platform Redis operator (chart 10 / GitLab
+# 19 dropped the bundled Redis). Standalone single instance — fine for one node.
+# The operator creates a "gitlab-redis" Service on :6379 that the HelmRelease
+# points global.redis at. PVC lands on the default longhorn StorageClass.
+# ponytail: passwordless — Redis has no external exposure and same-namespace
+# traffic is all that reaches it. Add a redisSecret if that ever changes.
+apiVersion: redis.redis.opstreelabs.in/v1beta2
+kind: Redis
+metadata:
+  name: gitlab-redis
+  namespace: gitlab
+spec:
+  kubernetesConfig:
+    image: quay.io/opstree/redis:v7.0.15 # Renovate-managed
+    imagePullPolicy: IfNotPresent
+  storage:
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi

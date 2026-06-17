@@ -46,3 +46,41 @@ spec:
               protocol: TCP
             - port: "443"
               protocol: TCP
+---
+# Let the platform DB operators manage their instances in this namespace through
+# default-deny. The operators run in their own (default-deny-exempt) namespaces
+# but their traffic still lands on gitlab pods, which only get the baseline CNP.
+# CloudNativePG connects to each Postgres instance's manager on :8000; the Redis
+# operator reconciles the Redis pod on :6379; the MinIO operator manages the
+# Tenant pods on :9000/:9090. Scoped to the operator namespaces.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-db-operators
+  namespace: gitlab
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: cnpg-system
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: redis-operator
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: minio-operator
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+            - port: "9090"
+              protocol: TCP

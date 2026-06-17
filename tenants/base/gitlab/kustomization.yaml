@@ -7,7 +7,11 @@ resources:
   - rbac.yaml
   - source.yaml
   - release.yaml
+  - postgres.yaml
+  - redis.yaml
+  - minio.yaml
   - external-secret.yaml
+  - object-storage-secrets.yaml
   - ingress.yaml
   - ssh-service.yaml
   - netpol.yaml

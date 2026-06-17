@@ -1,0 +1,42 @@
+# S3-compatible object storage for GitLab, declared via the platform MinIO
+# operator (chart 10 / GitLab 19 dropped bundled object storage and now requires
+# external S3 for artifacts, LFS, uploads, packages, the registry and backups).
+# Single server / single drive — fine for one node (no erasure coding). TLS off:
+# the operator exposes the S3 API as the in-namespace "minio" Service on :80, and
+# GitLab talks to it over plain HTTP within the namespace (no external exposure).
+# Root credentials come from the gitlab-objstore-config Secret (object-storage-
+# secrets.yaml). Buckets are auto-created by the operator.
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: gitlab-objstore
+  namespace: gitlab
+spec:
+  configuration:
+    name: gitlab-objstore-config # Secret with config.env (MINIO_ROOT_USER/PASSWORD)
+  requestAutoCert: false
+  pools:
+    - name: pool-0
+      servers: 1
+      volumesPerServer: 1
+      volumeClaimTemplate:
+        metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 50Gi # default longhorn StorageClass
+  buckets:
+    - name: gitlab-artifacts
+    - name: gitlab-lfs
+    - name: gitlab-uploads
+    - name: gitlab-packages
+    - name: gitlab-mr-diffs
+    - name: gitlab-terraform-state
+    - name: gitlab-ci-secure-files
+    - name: gitlab-dependency-proxy
+    - name: gitlab-registry
+    - name: gitlab-backups
+    - name: gitlab-tmp
