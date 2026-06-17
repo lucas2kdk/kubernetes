@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.5.2...platform/v1.6.0) (2026-06-17)
+
+
+### Features
+
+* **platform:** add CloudNativePG and Redis operators ([#88](https://github.com/lucas2kdk/kubernetes/issues/88)) ([392b23b](https://github.com/lucas2kdk/kubernetes/commit/392b23b994e48a0e914e7faea2e67f38e47f53af))
+
 ## [1.5.2](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.5.1...platform/v1.5.2) (2026-06-17)
 
 
