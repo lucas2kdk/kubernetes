@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.6.0...platform/v1.7.0) (2026-06-17)
+
+
+### Features
+
+* **platform:** add MinIO operator ([#91](https://github.com/lucas2kdk/kubernetes/issues/91)) ([36982b2](https://github.com/lucas2kdk/kubernetes/commit/36982b26903aeb5a222c2aa579c2739d5152ac37))
+
 ## [1.6.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.5.2...platform/v1.6.0) (2026-06-17)
 
 
