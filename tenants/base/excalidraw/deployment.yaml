@@ -1,13 +1,13 @@
-# Trial backend behind the Cilium Gateway, converted from convert-me.yaml
-# (docker-compose). Excalidraw is a fully client-side app served by nginx on :80
-# — stateless, so one replica and no volumes. The compose used Traefik labels +
-# `:latest`; routing is now an HTTPRoute (httproute.yaml) and the tag is pinned
-# (Excalidraw publishes only `latest` + immutable `sha-*` tags — no semver).
+# Trial app, originally converted from a docker-compose (convert-me.yaml).
+# Excalidraw is a fully client-side app served by nginx on :80 — stateless, so
+# one replica and no volumes. The image is pinned (Excalidraw publishes only
+# `latest` + immutable `sha-*` tags — no semver). Routing is the HTTPRoute in
+# httproute.yaml, which attaches to the platform Cilium Gateway.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: excalidraw
-  namespace: cilium-gateway
+  namespace: excalidraw
 spec:
   replicas: 1
   selector:
@@ -38,7 +38,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: excalidraw
-  namespace: cilium-gateway
+  namespace: excalidraw
 spec:
   selector:
     app: excalidraw

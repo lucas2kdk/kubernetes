@@ -5,8 +5,9 @@
 #
 # Two listeners: :80 only carries the HTTP→HTTPS redirect (http-redirect.yaml),
 # and :443 terminates TLS with the cert-manager cert (certificate.yaml) and
-# serves the app route (httproute.yaml). The reserved:ingress proxy identity is
-# allowed through default-deny by platform/base/network/allow-gateway-proxy.yaml.
+# serves the excalidraw tenant's app route (tenants/base/excalidraw/httproute.yaml,
+# cross-namespace). The reserved:ingress proxy identity is allowed through
+# default-deny by platform/base/network/allow-gateway-proxy.yaml.
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -38,5 +39,12 @@ spec:
           - kind: Secret
             name: draw-rosenvold-tech-tls
       allowedRoutes:
+        # The app route lives in the excalidraw tenant namespace now, so the https
+        # listener must accept routes from there (cross-namespace). Scoped by
+        # namespace name so no other namespace can attach to this listener. The
+        # http listener above stays `Same` — only the in-namespace redirect uses it.
         namespaces:
-          from: Same
+          from: Selector
+          selector:
+            matchLabels:
+              kubernetes.io/metadata.name: excalidraw

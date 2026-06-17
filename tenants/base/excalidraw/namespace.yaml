@@ -1,0 +1,8 @@
+# Tenant namespace. Like hello-world, no platform.io/managed label — excalidraw
+# is a tenant app and is deliberately subject to the Kyverno guardrails and the
+# Cilium default-deny. It reaches the outside world only through the platform
+# Cilium Gateway (platform/base/cilium-gateway), via its own HTTPRoute below.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: excalidraw

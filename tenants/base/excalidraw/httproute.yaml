@@ -1,0 +1,24 @@
+# App route: serves Excalidraw over the Gateway's HTTPS listener (sectionName:
+# https). Plain HTTP is handled by the redirect route that stays with the Gateway
+# (platform/base/cilium-gateway/http-redirect.yaml), which 301s to https.
+#
+# The Gateway lives in the cilium-gateway namespace (platform infra), so parentRef
+# is cross-namespace — the Gateway's https listener allowedRoutes selects this
+# namespace by name. The backendRef stays in-namespace, so no ReferenceGrant is
+# needed. Reach it at https://draw.rosenvold.tech.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: excalidraw
+  namespace: excalidraw
+spec:
+  parentRefs:
+    - name: cilium-gw
+      namespace: cilium-gateway
+      sectionName: https
+  hostnames:
+    - draw.rosenvold.tech
+  rules:
+    - backendRefs:
+        - name: excalidraw
+          port: 80
