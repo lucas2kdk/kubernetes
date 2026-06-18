@@ -1,7 +1,7 @@
-# Tenant base — the full set of tenant apps. Per-cluster overlays
-# (tenants/overlays/<cluster>) build on this; each cluster's tenants Flux
-# Kustomization (clusters/<cluster>/tenants.yaml) points at its overlay.
+# Tenant base — apps shared across all clusters. Currently empty: hello-world
+# was retired (its image runs as root on :80 and couldn't meet the restricted
+# PodSecurity profile), and excalidraw/gitlab are prod-only (pulled directly by
+# the prod-fsn overlay). Kept as the seam for future fleet-wide tenants.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources:
-  - hello-world
+resources: []

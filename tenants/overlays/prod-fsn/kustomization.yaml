@@ -1,6 +1,4 @@
-# Per-cluster tenant presence for prod-fsn — which tenant apps run here. The
-# hello-world diff from base is the ingress host (hello-world-prod) so the
-# tailscale hostname is unique per cluster.
+# Per-cluster tenant presence for prod-fsn — which tenant apps run here.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -11,13 +9,3 @@ resources:
   - ../../base/excalidraw
   # GitLab CE is prod-only: heavy single-node workload exposed on the prod tailnet.
   - ../../base/gitlab
-patches:
-  - target:
-      group: helm.toolkit.fluxcd.io
-      version: v2
-      kind: HelmRelease
-      name: hello-world
-    patch: |-
-      - op: replace
-        path: /spec/values/ingress/host
-        value: hello-world-prod
