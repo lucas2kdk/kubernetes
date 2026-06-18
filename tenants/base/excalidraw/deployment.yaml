@@ -1,8 +1,13 @@
 # Trial app, originally converted from a docker-compose (convert-me.yaml).
-# Excalidraw is a fully client-side app served by nginx on :80 — stateless, so
-# one replica and no volumes. The image is pinned (Excalidraw publishes only
+# Excalidraw is a fully client-side app served by nginx — stateless, so one
+# replica and no volumes. The image is pinned (Excalidraw publishes only
 # `latest` + immutable `sha-*` tags — no semver). Routing is the HTTPRoute in
 # httproute.yaml, which attaches to the platform Cilium Gateway.
+#
+# Runs non-root on :8080 (restricted PodSecurity compliant): a replacement
+# nginx.conf (nginx-config.yaml) listens on the unprivileged port with pid/temp
+# under /tmp. The Service keeps port 80 (so the HTTPRoute backendRef is
+# unchanged) but targets 8080.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -18,11 +23,24 @@ spec:
       labels:
         app: excalidraw
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: excalidraw
           image: excalidraw/excalidraw:sha-4bfc5bb@sha256:3d243e15afde6c6511be36b14cef3d095b9d91bcd35ba98aca3b546f4b477df9 # Renovate-managed
           ports:
-            - containerPort: 80
+            - containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
           resources:
             requests:
               cpu: 25m
@@ -32,7 +50,16 @@ spec:
           readinessProbe:
             httpGet:
               path: /
-              port: 80
+              port: 8080
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: excalidraw-nginx
 ---
 apiVersion: v1
 kind: Service
@@ -44,4 +71,4 @@ spec:
     app: excalidraw
   ports:
     - port: 80
-      targetPort: 80
+      targetPort: 8080

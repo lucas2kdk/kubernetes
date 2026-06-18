@@ -8,6 +8,7 @@ kind: Kustomization
 namespace: excalidraw
 resources:
   - namespace.yaml
+  - nginx-config.yaml
   - deployment.yaml
   - httproute.yaml
   - netpol.yaml
