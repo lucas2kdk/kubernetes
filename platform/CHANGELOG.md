@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.7.0...platform/v1.8.0) (2026-06-18)
+
+
+### Features
+
+* **policy:** enforce baseline + restricted PodSecurity ([#107](https://github.com/lucas2kdk/kubernetes/issues/107)) ([886dd9d](https://github.com/lucas2kdk/kubernetes/commit/886dd9daaa44827a83e7c52186c05128c03ae4ab))
+
 ## [1.7.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.6.0...platform/v1.7.0) (2026-06-17)
 
 
