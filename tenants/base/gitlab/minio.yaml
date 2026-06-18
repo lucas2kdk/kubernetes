@@ -19,6 +19,20 @@ spec:
     - name: pool-0
       servers: 1
       volumesPerServer: 1
+      # restricted PodSecurity: the operator already sets a compliant pod-level
+      # securityContext (runAsNonRoot, fsGroup, RuntimeDefault), but the MinIO
+      # container is missing allowPrivilegeEscalation:false + dropped caps. Set
+      # them so the pod passes the restricted profile under Enforce.
+      containerSecurityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+        seccompProfile:
+          type: RuntimeDefault
       volumeClaimTemplate:
         metadata:
           name: data
