@@ -38,11 +38,14 @@ spec:
                 matchLabels:
                   platform.io/managed: "true"
       validate:
-        # Audit only for now (see spec comment); promote to Enforce per-environment
-        # once policy reports are clean. Uses Kyverno's native podSecurity subrule
-        # so init/ephemeral containers are evaluated correctly; version: latest
-        # tracks the newest PSS ruleset Kyverno ships.
-        failureAction: Audit
+        # Enforce: tenant workloads must meet the baseline PSS at admission (no
+        # privileged containers, host namespaces, hostPath/hostPort). Promoted
+        # from Audit once policy reports were clean across all tenant namespaces
+        # (the DB/storage operators run in platform.io/managed namespaces, which
+        # are excluded above). Uses Kyverno's native podSecurity subrule so
+        # init/ephemeral containers are evaluated; version: latest tracks the
+        # newest PSS ruleset Kyverno ships.
+        failureAction: Enforce
         podSecurity:
           level: baseline
           version: latest
