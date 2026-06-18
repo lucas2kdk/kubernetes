@@ -36,8 +36,14 @@ spec:
                 matchLabels:
                   platform.io/managed: "true"
       validate:
-        # ponytail: Audit — promote to Enforce once policy-reporter shows clean
-        failureAction: Audit
+        # Enforce: tenant workloads must run non-root, no privilege escalation,
+        # all capabilities dropped, RuntimeDefault seccomp (added by the
+        # add-seccomp-runtime-default mutate). Promoted from Audit once every
+        # tenant workload was made compliant — MinIO/excalidraw got explicit
+        # securityContexts, the GitLab runner sets restricted-compliant CI job
+        # pods, and hello-world (root on :80) was retired. Platform components
+        # are exempt via the platform.io/managed namespace selector above.
+        failureAction: Enforce
         podSecurity:
           level: restricted
           version: latest
