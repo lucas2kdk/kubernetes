@@ -1,17 +1,7 @@
-# Per-cluster tenant presence for test-home — which tenant apps run here. The
-# only diff from base is the ingress host (hello-world-test) so the tailscale
-# hostname is unique per cluster.
+# Per-cluster tenant presence for test-home. No tenant apps currently run here:
+# hello-world (the former smoke-test) was retired, and excalidraw/gitlab are
+# prod-only. References the (empty) base as the seam for future tenants.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ../../base
-patches:
-  - target:
-      group: helm.toolkit.fluxcd.io
-      version: v2
-      kind: HelmRelease
-      name: hello-world
-    patch: |-
-      - op: replace
-        path: /spec/values/ingress/host
-        value: hello-world-test
