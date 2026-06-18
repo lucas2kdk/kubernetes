@@ -3,8 +3,8 @@
 # + DNS) and nothing else, so external requests forwarded by the Gateway's Envoy
 # proxy would be dropped. The proxy runs under Cilium's reserved `ingress`
 # identity (see platform/base/network/allow-gateway-proxy.yaml for the egress
-# side); this allows it in on :80. Cilium policies are additive — this stacks on
-# the baseline CNP, it does not replace it.
+# side); this allows it in on :8080 (the non-root container port). Cilium
+# policies are additive — this stacks on the baseline CNP, it does not replace it.
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -19,5 +19,5 @@ spec:
         - ingress
       toPorts:
         - ports:
-            - port: "80"
+            - port: "8080"
               protocol: TCP
