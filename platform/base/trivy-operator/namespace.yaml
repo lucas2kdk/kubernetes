@@ -8,3 +8,8 @@ metadata:
   name: trivy-system
   labels:
     platform.io/managed: "true"
+    # node-collector runs privileged (hostPID + node hostPath mounts for the CIS
+    # benchmark), which the cluster-default built-in Pod Security Admission
+    # (baseline) denies. platform.io/managed only exempts Kyverno, not PSA — the
+    # PSA override is this separate label, same as monitoring/tsidp/tailscale.
+    pod-security.kubernetes.io/enforce: privileged

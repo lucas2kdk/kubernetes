@@ -1,0 +1,37 @@
+# Scrape the GitLab MinIO tenant's Prometheus metrics. The MinIO operator (chart
+# 7.1.1) no longer ships its own ServiceMonitor (upstream dropped it because the
+# operator-managed one double-counted metrics), so we declare our own. It targets
+# the operator-created headless service "gitlab-objstore-hl" — that's the only
+# service exposing the raw MinIO port 9000 (the ClusterIP "minio" service maps
+# port 80 -> 9000), and the "http-minio" port name is stable across operator
+# versions. MinIO serves Prometheus metrics on the S3 API port itself at
+# /minio/v2/metrics/cluster (cluster-scoped: capacity, node/drive online/offline,
+# health). Scraping is unauthenticated only because minio.yaml sets
+# MINIO_PROMETHEUS_AUTH_TYPE=public; without that this endpoint would 403.
+#
+# Cross-namespace scrape: kube-prometheus-stack runs in `monitoring`, this CR
+# lives in `gitlab`. Discovery works regardless of namespace because the operator
+# sets serviceMonitorSelectorNilUsesHelmValues:false (see docs/monitoring.md).
+# The scrape itself is allowed through default-deny by the netpol rule that lets
+# the monitoring namespace reach :9000 (netpol.yaml).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gitlab-minio
+  namespace: gitlab
+  labels:
+    # Match the tenant so it's easy to find; not used for Prometheus selection
+    # (the operator's nil-selector default discovers it cluster-wide).
+    v1.min.io/tenant: gitlab-objstore
+spec:
+  namespaceSelector:
+    matchNames:
+      - gitlab
+  selector:
+    matchLabels:
+      v1.min.io/tenant: gitlab-objstore # operator labels its services with this
+  endpoints:
+    - port: http-minio # headless service port name -> container :9000
+      scheme: http # requestAutoCert:false, so metrics are plain HTTP in-namespace
+      path: /minio/v2/metrics/cluster
+      interval: 30s

@@ -15,6 +15,16 @@ spec:
   configuration:
     name: gitlab-objstore-config # Secret with config.env (MINIO_ROOT_USER/PASSWORD)
   requestAutoCert: false
+  # Serve the Prometheus metrics endpoints (/minio/v2/metrics/*) without auth so
+  # an in-cluster Prometheus can scrape them with a plain ServiceMonitor (minio-
+  # servicemonitor.yaml). Default is "jwt", which requires a bearer token minted
+  # from the root creds and makes ServiceMonitor scraping awkward. Safe here: the
+  # metrics carry no object data (only capacity/health/op counters), the endpoint
+  # is reachable only inside the netpol-isolated gitlab namespace, and the only
+  # allowed cross-namespace ingress to :9000 is from `monitoring` (netpol.yaml).
+  env:
+    - name: MINIO_PROMETHEUS_AUTH_TYPE
+      value: public
   pools:
     - name: pool-0
       servers: 1

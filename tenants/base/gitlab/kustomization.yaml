@@ -16,3 +16,5 @@ resources:
   - ingress.yaml
   - ssh-service.yaml
   - netpol.yaml
+  - redis-servicemonitor.yaml
+  - minio-servicemonitor.yaml

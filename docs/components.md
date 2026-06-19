@@ -41,6 +41,13 @@ rationale, see [architecture](architecture.md) and the top-level
 | [kube-prometheus-stack](#kube-prometheus-stack) | Prometheus + Grafana + operator CRDs | `kube-prometheus-stack` `86.2.2` | `monitoring` | — | tailnet `https://grafana.<tailnet>.ts.net` |
 | [monitoring-extras](#monitoring-extras) | Flux/Longhorn monitors (post-CRD) | plain manifests (reused) | `flux-system` / `longhorn-system` | kube-prometheus-stack | — |
 | [capacitor](#capacitor) | Flux GitOps dashboard UI | OCI `ghcr.io/gimlet-io/capacitor-manifests` (`>=0.1.0`) | `flux-system` | — | — |
+| [cilium-gateway](#cilium-gateway) | Cilium Gateway API (trial, alongside Traefik) | plain manifests | `cilium-gateway` | cert-manager-issuers | LB-IPAM (prod-fsn only) |
+| [cloudnative-pg](#cloudnative-pg) | Postgres operator — CNPG CRDs for tenants | `cloudnative-pg` `0.28.3` (operator v1.29.1) | `cnpg-system` | — | `Cluster`/`Database` CRDs |
+| [redis-operator](#redis-operator) | Redis operator — `Redis` CRD for tenants | `redis-operator` `0.24.0` (OT-Container-Kit) | `redis-operator` | — | `Redis` CRD |
+| [minio-operator](#minio-operator) | MinIO operator — S3-compatible `Tenant` CRD | `operator` `7.1.1` (min.io) | `minio-operator` | — | `Tenant` CRD |
+| [priority-classes](#priority-classes) | Platform-vs-tenant `PriorityClass`es | plain manifests | cluster-scoped | — | — |
+| [flux-notifications](#flux-notifications) | Flux → Discord drift alerts | plain manifests | `flux-system` | external-secrets-stores | — |
+| [platform-meta](#platform-meta) | `platform_build_info` version exporter | plain manifests | `flux-system` | — | metric |
 
 Every platform namespace carries `platform.io/managed: "true"` (exempts it from
 the tenant-facing Kyverno policies). Cilium default-deny exemption is *not*
@@ -105,11 +112,12 @@ The Kyverno `ClusterPolicy` set — the tenant-facing guardrails. Plain manifest
 - **Namespace:** cluster-scoped (`ClusterPolicy`).
 - **Fleet:** `platform/fleet/kyverno-policies.yaml`, `dependsOn: kyverno` (CRDs +
   webhook must exist first).
-- **The set:** `flux-multi-tenancy` (the cross-namespace sourceRef guardrail,
-  **Enforce**), `pod-security-baseline`, `pod-security-restricted`,
-  `disallow-default-namespace`, `require-resource-requests`, `disallow-latest-tag`,
-  `require-pod-probes` (Tier-1 baseline, rolled out **Audit** until reports are
-  clean, promote per-environment), plus `generate-baseline-netpol` +
+- **The set:** `flux-multi-tenancy`, `pod-security-baseline`,
+  `pod-security-restricted` (all **Enforce** — block tenant pods at admission),
+  plus the Tier-1 baseline still in **Audit** (`disallow-default-namespace`,
+  `require-resource-requests`, `disallow-latest-tag`, `require-pod-probes` —
+  report-only until reports are clean, promote per-environment), plus
+  `add-seccomp-runtime-default` (**Mutate**), `generate-baseline-netpol` +
   `kyverno:manage-ciliumnetworkpolicies` RBAC (generates a baseline
   same-namespace + DNS `CiliumNetworkPolicy` for each tenant namespace under the
   default-deny).
@@ -419,3 +427,101 @@ useful for debugging the fleet's `dependsOn` graph.
   OCI-packaged manifests into `flux-system`.
 - **Namespace:** `flux-system`.
 - **Fleet:** `platform/fleet/capacitor.yaml` — a reconcile root (no `dependsOn`).
+
+## cilium-gateway
+
+Trial of the Cilium Gateway API alongside Traefik, currently serving
+`draw.rosenvold.tech` (the excalidraw tenant). The `cilium` GatewayClass, the
+Gateway API CRDs and Cilium LB-IPAM all come from Terraform/Talos out-of-band.
+
+- **Namespace:** `cilium-gateway` (the `Gateway` is `cilium-gw`).
+- **Fleet:** `platform/fleet/cilium-gateway.yaml`, `dependsOn:
+  cert-manager-issuers` (the HTTPS listener serves a cert-manager `Certificate`,
+  so the `letsencrypt-production` `ClusterIssuer` must exist first).
+- **Files:** `gateway.yaml` (HTTP + HTTPS listeners on `draw.rosenvold.tech`),
+  `http-redirect.yaml` (HTTP→HTTPS), `certificate.yaml`, `ip-pool.yaml`.
+- **prod-fsn only:** no `postBuild` substitution — the IPv6 LB prefix is
+  hardcoded in `ip-pool.yaml` and only prod-fsn pulls the whole fleet, so
+  test-home never reconciles this.
+- See [networking](networking.md) for the default-deny exemption the Gateway
+  proxy needs.
+
+## cloudnative-pg
+
+The CloudNativePG operator — a **platform-provided datastore capability**. It
+ships the `postgresql.cnpg.io` `Cluster`/`Database` CRDs so tenants declare their
+own Postgres instead of hand-rolling a StatefulSet. The operator owns no data;
+the instance CRs live in the tenant (the `gitlab` tenant is the first consumer).
+
+- **Chart:** `cloudnative-pg` `0.28.3` (operator v1.29.1) from `HelmRepository
+  cloudnative-pg` (`https://cloudnative-pg.github.io/charts`).
+- **Namespace:** `cnpg-system`.
+- **Fleet:** `platform/fleet/cloudnative-pg.yaml` — a reconcile root (no
+  `dependsOn`; ships no ServiceMonitor by default, no platform prerequisite).
+
+## redis-operator
+
+The OT-Container-Kit Redis operator — a platform-provided datastore capability.
+Ships the `redis.redis.opstreelabs.in` `Redis` CRD so tenants declare their own
+Redis (the `gitlab` tenant consumes it).
+
+- **Chart:** `redis-operator` `0.24.0` from `HelmRepository redis-operator`
+  (`https://ot-container-kit.github.io/helm-charts`).
+- **Namespace:** `redis-operator`.
+- **Fleet:** `platform/fleet/redis-operator.yaml` — a reconcile root. The
+  admission webhook is disabled, so no `cert-manager` dependency.
+
+## minio-operator
+
+The MinIO operator — a platform-provided storage capability. Ships the
+`minio.min.io` `Tenant` CRD so tenants declare S3-compatible object storage (the
+`gitlab` tenant consumes it).
+
+- **Chart:** `operator` `7.1.1` from `HelmRepository minio-operator`
+  (`https://operator.min.io`).
+- **Namespace:** `minio-operator`.
+- **Fleet:** `platform/fleet/minio-operator.yaml` — a reconcile root.
+
+> All three datastore/storage operator namespaces (`cnpg-system`,
+> `redis-operator`, `minio-operator`) sit in the four namespace-exclusion lists:
+> the operators reach the instance pods they manage in tenant namespaces. See
+> [networking](networking.md) and the CLAUDE.md "Datastore & storage operators"
+> note.
+
+## priority-classes
+
+Two cluster-scoped `PriorityClass`es so platform components survive node pressure
+ahead of tenant workloads (#47).
+
+- **Namespace:** cluster-scoped (exempt from the four namespace-exclusion lists).
+- **Fleet:** `platform/fleet/priority-classes.yaml` — a reconcile root.
+- **Classes:** `platform-critical` (value `100000`, preempt and outlive tenant
+  workloads under node pressure) and `tenant-default` (value `0`, yields to
+  `platform-critical`).
+
+## flux-notifications
+
+Flux → Discord drift alerts: a notification-controller `Provider` + `Alert` plus
+the ESO-synced Discord webhook (added 2026-06-13).
+
+- **Namespace:** `flux-system`.
+- **Fleet:** `platform/fleet/flux-notifications.yaml`, `dependsOn:
+  external-secrets-stores` (the Discord webhook is a Vault-synced secret, so the
+  `ClusterSecretStore` must exist before its `ExternalSecret` resolves).
+- **Files:** `provider.yaml`, `alert.yaml`, `external-secret.yaml`.
+
+## platform-meta
+
+A tiny exporter that publishes the deployed platform bundle version as a
+Prometheus metric (`platform_build_info` gauge), so the fleet's running version
+is queryable — the version-health-gate signal.
+
+- **Namespace:** `flux-system`.
+- **Fleet:** `platform/fleet/platform-meta.yaml` — a reconcile root.
+- **Files:** `platform-version.yaml` (the version `ConfigMap`),
+  `version-exporter.yaml` (a Python `Deployment` + `Service` + `ServiceMonitor`,
+  image pinned `docker.io/library/python:3.14-alpine`).
+- **Caveat:** it ships a `ServiceMonitor` but the fleet file has no `dependsOn:
+  kube-prometheus-stack` (the rule in README "Reconcile order"). It works today
+  because the Prometheus-Operator CRDs are already present on a steady-state
+  cluster; a from-scratch reconcile could race the CRDs.

@@ -1,0 +1,34 @@
+# Scrape the gitlab-redis redis_exporter sidecar so the Redis dashboard (gnetId
+# 763) and the RedisDown alert have data. The Redis CR (redis.yaml) only enables
+# the exporter container/Service — the OT-Container-Kit operator does NOT emit a
+# ServiceMonitor itself (that's a feature of the operator's own Helm chart, not
+# the Redis CR), so we ship one here.
+#
+# v0.24.0 publishes a dedicated metrics Service "<name>-metrics"
+# (gitlab-redis-metrics) carrying only the exporter port — named "redis-exporter"
+# (:9121) — so monitoring never touches the Redis data port. Its selector labels
+# are the operator's stable set (app/redis_setup_type/role) plus
+# app.kubernetes.io/component=metrics; we match the metrics component to avoid
+# selecting the data Service. Prometheus discovers this CR cluster-wide via
+# serviceMonitorSelectorNilUsesHelmValues:false (kube-prometheus-stack
+# release.yaml); the monitoring namespace reaches :9121 through the scoped CNP in
+# netpol.yaml.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gitlab-redis
+  namespace: gitlab
+  labels:
+    app.kubernetes.io/part-of: gitlab
+    app.kubernetes.io/component: monitoring
+spec:
+  namespaceSelector:
+    matchNames:
+      - gitlab
+  selector:
+    matchLabels:
+      app: gitlab-redis
+      app.kubernetes.io/component: metrics
+  endpoints:
+    - port: redis-exporter
+      path: /metrics

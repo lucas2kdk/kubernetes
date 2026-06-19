@@ -10,6 +10,7 @@
 #   longhorn_*        Longhorn (longhorn-servicemonitor.yaml)
 #   kyverno_*         Kyverno (scraped via its ServiceMonitor)
 #   certmanager_*     cert-manager (scraped via its ServiceMonitor)
+#   redis_*           redis_exporter (gitlab-redis ServiceMonitor)
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -152,3 +153,17 @@ spec:
           annotations:
             summary: "Certificate {{ $labels.namespace }}/{{ $labels.name }} expiring soon"
             description: "Certificate {{ $labels.name }} expires in {{ $value | printf \"%.1f\" }} days."
+
+    - name: redis
+      rules:
+        # redis_up is the exporter's connectivity gauge: 1 when it can reach the
+        # Redis it watches, 0 when the connection is down (or 6379 is unreachable).
+        # Fires per scrape target, so the labels point at the failing instance.
+        - alert: RedisDown
+          expr: redis_up == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Redis {{ $labels.namespace }} instance is down"
+            description: "redis_exporter cannot reach Redis ({{ $labels.instance }}) — dependent workloads (e.g. GitLab) will be degraded."

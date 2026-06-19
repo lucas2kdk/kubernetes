@@ -31,6 +31,10 @@ resources:
   - dashboards/17346-traefik.yaml
   - dashboards/21217-external-secrets.yaml
   - dashboards/17813-trivy-operator.yaml
+  # Datastore backends for the gitlab tenant (redis_exporter / MinIO / CNPG).
+  - dashboards/763-redis.yaml
+  - dashboards/13502-minio.yaml
+  - dashboards/20417-cnpg.yaml
 
 # The committed Grafana dashboard JSON carries literal ${...} tokens (Grafana
 # template variables) that Flux's post-build envsubst can't parse — it fails the
