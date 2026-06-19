@@ -38,6 +38,7 @@ rationale, see [architecture](architecture.md) and the top-level
 | [tailscale-operator](#tailscale-operator) | API-server proxy (auth mode) + tailnet ingress | `tailscale-operator` `1.98.4` | `tailscale` | external-secrets-stores | tailnet `k8s-api-<cluster>` |
 | [tsidp](#tsidp) | Tailscale OIDC identity provider | plain Deployment (`ghcr.io/tailscale/tsidp:v0.0.14`) | `tsidp` | external-secrets-stores | tailnet Funnel `idp.<tailnet>.ts.net` |
 | [headlamp](#headlamp) | Kubernetes dashboard | `headlamp` `0.42.0` | `headlamp` | external-secrets-stores | tailnet `https://headlamp.<tailnet>.ts.net` |
+| [homepage](#homepage) | Service dashboard (auto-discovery + light metrics) | `homepage` `2.1.0` (image `v1.13.2`) | `homepage` | — | tailnet `https://homepage.<tailnet>.ts.net` |
 | [kube-prometheus-stack](#kube-prometheus-stack) | Prometheus + Grafana + operator CRDs | `kube-prometheus-stack` `86.2.2` | `monitoring` | — | tailnet `https://grafana.<tailnet>.ts.net` |
 | [monitoring-extras](#monitoring-extras) | Flux/Longhorn monitors (post-CRD) | plain manifests (reused) | `flux-system` / `longhorn-system` | kube-prometheus-stack | — |
 | [capacitor](#capacitor) | Flux GitOps dashboard UI | OCI `ghcr.io/gimlet-io/capacitor-manifests` (`>=0.1.0`) | `flux-system` | — | — |
@@ -339,6 +340,41 @@ OIDC with group-based RBAC.
 - **Access:** Tailscale Ingress (`ingressClassName: tailscale`) — no Traefik
   route, no cert-manager cert, no public DNS:
   `https://headlamp.<tailnet>.ts.net`. RBAC via `rbac-oidc.yaml`.
+
+## homepage
+
+A single landing page for the fleet's web UIs. It **auto-discovers** services:
+the in-cluster ServiceAccount watches Ingresses/HTTPRoutes cluster-wide and
+surfaces any carrying `gethomepage.dev/*` annotations — no central service list
+to maintain. Reached over the tailnet only (no built-in auth, so the tailnet ACL
+is the auth boundary, like Headlamp/Grafana).
+
+- **Chart:** `homepage` `2.1.0` from `HelmRepository homepage`
+  (`https://jameswynn.github.io/helm-charts`) — the de-facto community chart;
+  upstream ships none. App image `ghcr.io/gethomepage/homepage:v1.13.2` is pinned
+  separately because the chart's appVersion lags upstream.
+- **Namespace:** `homepage` (`platform.io/managed`; added by hand to the four
+  namespace-exclusion lists so it can egress to the kube-apiserver and Prometheus).
+- **Fleet:** `platform/fleet/homepage.yaml` — **no `dependsOn`**: it ships no
+  ServiceMonitor, it only *queries* Prometheus over HTTP at runtime. Carries
+  `postBuild.substituteFrom` for `${tailnet}` (allowed-hosts) and `${cluster_name}`
+  (title).
+- **Key config:**
+  - **RBAC:** `enableRbac: true` makes the chart create the ServiceAccount +
+    ClusterRole/Binding the cluster watch needs (ingresses, `gateway.networking.k8s.io`
+    httproutes, `metrics.k8s.io`, …).
+  - **`HOMEPAGE_ALLOWED_HOSTS`:** recent homepage rejects unlisted `Host` headers;
+    the value lists the pod IP **first** (`$(MY_POD_IP):3000`, so the kubelet probe
+    passes) then `homepage.${tailnet}.ts.net`.
+  - **Auto-discovery:** `kubernetes.mode: cluster`, `ingress: true`, `gateway: true`.
+    Service tiles come from `gethomepage.dev/*` annotations on the Grafana, Headlamp
+    (platform) and GitLab, Excalidraw (tenant) ingress/route objects.
+  - **Light metrics:** a `kubernetes` widget (cluster/node CPU+mem via
+    metrics-server) and a `prometheusmetric` widget querying
+    `kube-prometheus-stack-prometheus.monitoring:9090` (firing-alert count, used
+    memory).
+- **Access:** Tailscale Ingress (`ingressClassName: tailscale`) — no Traefik
+  route, no cert-manager cert, no public DNS: `https://homepage.<tailnet>.ts.net`.
 
 ## kube-prometheus-stack
 

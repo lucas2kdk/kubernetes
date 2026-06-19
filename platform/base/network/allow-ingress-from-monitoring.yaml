@@ -33,6 +33,7 @@ spec:
           - netdata
           - vector
           - headlamp
+          - homepage
           - tsidp
           - trivy-system
           - longhorn-system

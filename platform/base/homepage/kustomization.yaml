@@ -1,0 +1,11 @@
+# Homepage dashboard base. Reached over the tailnet only (ingress.yaml, no public
+# DNS). Auto-discovers services cluster-wide via gethomepage.dev/* annotations and
+# shows a light metrics strip (kubernetes + prometheusmetric widgets). The chart
+# creates its own ServiceAccount + ClusterRole (enableRbac), so no rbac.yaml here.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yaml
+  - source.yaml
+  - release.yaml
+  - ingress.yaml

@@ -96,6 +96,14 @@ of chart labels or namespace.
 Grafana dashboards use a separate discovery path — the **sidecar label**
 mechanism (see below), not the monitor selectors.
 
+### Read-only consumers of Prometheus
+
+The [homepage](components.md#homepage) dashboard is a **consumer**, not a target:
+it ships no monitor, it just runs PromQL at render time against
+`kube-prometheus-stack-prometheus.monitoring:9090` (`prometheusmetric` widget —
+firing-alert count, used memory). Its `homepage` namespace is excluded from
+default-deny so the query egress is allowed; nothing scrapes homepage back.
+
 ## The committed monitors
 
 | Monitor | Kind | Where it lives | Reconciled by | Target |

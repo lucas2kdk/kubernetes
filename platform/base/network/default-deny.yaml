@@ -49,6 +49,7 @@ spec:
           - traefik
           - monitoring
           - headlamp
+          - homepage
           - tsidp
           - trivy-system
           # Terraform-managed storage layer; excluded so Prometheus can scrape

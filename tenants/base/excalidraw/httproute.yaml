@@ -11,6 +11,15 @@ kind: HTTPRoute
 metadata:
   name: excalidraw
   namespace: excalidraw
+  # Auto-register on the homepage dashboard. homepage needs an explicit href for
+  # Gateway API HTTPRoutes; the public host is fixed, so hardcode it.
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Excalidraw
+    gethomepage.dev/description: Whiteboard
+    gethomepage.dev/group: Tenants
+    gethomepage.dev/icon: excalidraw.png
+    gethomepage.dev/href: "https://draw.rosenvold.tech"
 spec:
   parentRefs:
     - name: cilium-gw

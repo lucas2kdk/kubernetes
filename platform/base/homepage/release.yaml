@@ -1,0 +1,109 @@
+# Homepage dashboard (gethomepage.dev). A cluster-wide ops landing page that
+# AUTO-DISCOVERS services: it watches Ingresses/HTTPRoutes across the cluster and
+# surfaces any carrying gethomepage.dev/* annotations (see the annotated ingresses
+# in platform/base/{kube-prometheus-stack,headlamp} and tenants/base/*). Plus a
+# light metrics strip: the built-in kubernetes widget (cluster/node CPU+mem via
+# metrics-server) and one prometheusmetric widget querying the in-cluster
+# Prometheus. Reached over the tailnet only (ingress.yaml). Ships no monitoring
+# CR of its own, so the fleet CR needs no dependsOn: kube-prometheus-stack.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: homepage
+  namespace: homepage
+spec:
+  interval: 1h
+  releaseName: homepage
+  chart:
+    spec:
+      chart: homepage
+      version: "2.1.0" # Renovate-managed
+      sourceRef:
+        kind: HelmRepository
+        name: homepage
+        namespace: flux-system
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    image:
+      # Pin the app image explicitly: the chart's appVersion lags upstream
+      # homepage releases (convention #6 — full ref, Renovate-managed).
+      repository: ghcr.io/gethomepage/homepage
+      tag: v1.13.2 # Renovate-managed
+    # Chart creates the ServiceAccount + ClusterRole/Binding the cluster watch
+    # needs (namespaces/pods/nodes, ingresses, traefik.io ingressroutes,
+    # gateway.networking.k8s.io httproutes/gateways, metrics.k8s.io nodes/pods).
+    enableRbac: true
+    serviceAccount:
+      create: true
+      name: homepage
+    env:
+      # MY_POD_IP MUST come before HOMEPAGE_ALLOWED_HOSTS: recent homepage
+      # rejects requests whose Host header isn't allow-listed, and the kubelet
+      # readiness/liveness probe hits the pod IP — so the pod IP has to be the
+      # first allowed host or the pod never goes Ready. The tailnet hostname is
+      # the only other Host we serve on (ingress.yaml).
+      - name: MY_POD_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.podIP
+      - name: HOMEPAGE_ALLOWED_HOSTS
+        value: "$(MY_POD_IP):3000,homepage.${tailnet}.ts.net"
+    # Container hygiene. The namespace's platform.io/managed label already exempts
+    # these pods from the restricted-PodSecurity admission policy; this is defence
+    # in depth. runAsNonRoot/readOnlyRootFilesystem are intentionally left off —
+    # homepage writes its rendered config under /app/config at startup.
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
+    config:
+      # mode: cluster -> use the in-cluster ServiceAccount above. Discover both
+      # standard Ingress and Gateway API HTTPRoute (the cluster uses both).
+      kubernetes:
+        mode: cluster
+        ingress: true
+        gateway: true
+      settings:
+        title: ${cluster_name}
+      # widgets.yaml — the "light metrics" strip rendered at the top of the page.
+      widgets:
+        # Cluster + per-node CPU/memory. Needs metrics-server (metrics.k8s.io),
+        # present from the Talos/distro layer; if blank, that's the gap to close.
+        - kubernetes:
+            cluster:
+              show: true
+              cpu: true
+              memory: true
+              showLabel: true
+              label: cluster
+            nodes:
+              show: true
+              cpu: true
+              memory: true
+              showLabel: true
+        # A couple of cluster-health numbers straight from the in-cluster
+        # Prometheus (no ServiceMonitor needed — this is a runtime HTTP query).
+        - prometheusmetric:
+            url: http://kube-prometheus-stack-prometheus.monitoring:9090
+            refreshInterval: 30000
+            metrics:
+              - label: Firing alerts
+                query: count(ALERTS{alertstate="firing"})
+              - label: Used memory
+                query: sum(node_memory_MemTotal_bytes) - sum(node_memory_MemAvailable_bytes)
+                format:
+                  type: bytes
+        - search:
+            provider: duckduckgo
+      # Auto-discovery supplies the service tiles; leave the static lists empty.
+      services: []
+      bookmarks: []
+      docker: {}

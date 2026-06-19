@@ -1,0 +1,11 @@
+# platform.io/managed: "true" exempts this namespace from the tenant guardrails
+# (Kyverno admission policies + Cilium default-deny). See README "Platform
+# namespace convention" — the Cilium NotIn lists must be updated by hand too.
+# homepage needs that exemption to egress to the kube-apiserver (cluster-wide
+# auto-discovery watch) and to Prometheus in the monitoring namespace.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: homepage
+  labels:
+    platform.io/managed: "true"

@@ -58,6 +58,7 @@ spec:
                 - kyverno
                 - policy-reporter
                 - headlamp
+                - homepage
                 - tsidp
                 - cert-manager
                 - external-secrets

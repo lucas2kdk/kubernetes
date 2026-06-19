@@ -9,6 +9,15 @@ kind: Ingress
 metadata:
   name: grafana
   namespace: monitoring
+  # Auto-register on the homepage dashboard. homepage can't derive a URL from
+  # this Ingress (defaultBackend, no host rules), so href is set explicitly.
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Grafana
+    gethomepage.dev/description: Metrics & dashboards
+    gethomepage.dev/group: Platform
+    gethomepage.dev/icon: grafana.png
+    gethomepage.dev/href: "https://grafana.${tailnet}.ts.net"
 spec:
   ingressClassName: tailscale
   defaultBackend:
