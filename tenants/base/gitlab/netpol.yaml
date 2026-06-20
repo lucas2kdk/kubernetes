@@ -84,3 +84,24 @@ spec:
               protocol: TCP
             - port: "9090"
               protocol: TCP
+---
+# Let Prometheus (monitoring namespace) scrape the redis_exporter sidecar on the
+# gitlab-redis pod. The baseline CNP only permits same-namespace + DNS, so the
+# cross-namespace scrape to the exporter (:9121, named "redis-exporter") would be
+# dropped by default-deny. Scoped to the monitoring namespace and that one port.
+# Pairs with redis-servicemonitor.yaml.
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-monitoring-redis-metrics
+  namespace: gitlab
+spec:
+  endpointSelector: {}
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "9121"
+              protocol: TCP

@@ -44,6 +44,29 @@ One policy can't use the label selector at all: `generate-baseline-netpol`
 matches on the `Namespace` *kind*, so it keeps a fully explicit `names:` list —
 this is list #4 of the [four-list lockstep](networking.md#the-four-list-lockstep).
 
+### Kyverno is not the only Pod Security enforcer
+
+There are **two independent Pod Security layers**, and `platform.io/managed`
+exempts a namespace from only the first:
+
+1. **Kyverno** `pod-security-baseline` / `pod-security-restricted` (this repo) —
+   exempted by the `platform.io/managed: "true"` label.
+2. **Kubernetes' built-in Pod Security Admission** — the cluster-default enforce
+   level is `baseline`, set in the Talos apiserver config (out of band from this
+   repo). PSA ignores `platform.io/managed` entirely; the only way to relax it on
+   a namespace is the **`pod-security.kubernetes.io/enforce`** label on that
+   namespace.
+
+So a platform namespace whose workloads need privileged pod features (hostPID,
+hostPath, host namespaces) needs **both** labels — `platform.io/managed: "true"`
+*and* `pod-security.kubernetes.io/enforce: privileged`. Setting only the former
+gets a built-in PSA denial that looks like
+`violates PodSecurity "baseline:latest": host namespaces (hostPID=true), ...`
+(note: the `"baseline:latest"` wording is built-in PSA, not a Kyverno policy).
+The namespaces that carry the `privileged` override today are `monitoring`,
+`tsidp`, `tailscale` and `trivy-system` (its `node-collector` runs the CIS
+benchmark privileged — it was missing the label until then).
+
 ## The policies
 
 | Policy (`metadata.name`) | File | Action | Validates / generates | Exclusions |
@@ -53,20 +76,25 @@ this is list #4 of the [four-list lockstep](networking.md#the-four-list-lockstep
 | `disallow-latest-tag` | [disallow-latest-tag.yaml](../platform/base/policies/disallow-latest-tag.yaml) | **Audit** | Two rules: `require-image-tag` rejects an image with no tag (`*:*`); `validate-image-tag` rejects the mutable `:latest` (`!*:latest`). | `platform.io/managed` label **+** explicit `kube-system`, `kube-node-lease`, `kube-public`, `flux-system` |
 | `generate-baseline-netpol` | [generate-baseline-netpol.yaml](../platform/base/policies/generate-baseline-netpol.yaml) | Generate (`generateExisting: true`, `synchronize: true`) | For every tenant namespace, generates a `CiliumNetworkPolicy` (`baseline-allow`) permitting same-namespace ingress/egress + DNS to CoreDNS, restoring the minimum a normal app needs under the Cilium default-deny. | Explicit `names:` list (list #4 of the lockstep), incl. `longhorn-system` |
 | `kyverno:manage-ciliumnetworkpolicies` | [kyverno-cilium-rbac.yaml](../platform/base/policies/kyverno-cilium-rbac.yaml) | RBAC (`ClusterRole`) | Not a policy — grants Kyverno's background/admission controllers (via `rbac.kyverno.io/aggregate-to-*` labels) the verbs to create/manage `ciliumnetworkpolicies`, which `generate-baseline-netpol` needs. | n/a |
-| `pod-security-baseline` | [pod-security-baseline.yaml](../platform/base/policies/pod-security-baseline.yaml) | **Audit** | Enforces the PSS **baseline** profile via Kyverno's native `podSecurity` subrule (no privileged containers, host namespaces, hostPath/hostPort, dangerous capabilities; init/ephemeral covered). | `platform.io/managed` label **+** explicit system namespaces |
-| `pod-security-restricted` | [pod-security-restricted.yaml](../platform/base/policies/pod-security-restricted.yaml) | **Audit** | Enforces the PSS **restricted** profile (no privilege escalation, runAsNonRoot, seccomp required, drop all capabilities, safe volume types). Builds on baseline. | `platform.io/managed` label **+** explicit system namespaces |
+| `pod-security-baseline` | [pod-security-baseline.yaml](../platform/base/policies/pod-security-baseline.yaml) | **Enforce** | Enforces the PSS **baseline** profile via Kyverno's native `podSecurity` subrule (no privileged containers, host namespaces, hostPath/hostPort, dangerous capabilities; init/ephemeral covered). Promoted from Audit in #107. | `platform.io/managed` label **+** explicit system namespaces |
+| `pod-security-restricted` | [pod-security-restricted.yaml](../platform/base/policies/pod-security-restricted.yaml) | **Enforce** | Enforces the PSS **restricted** profile (no privilege escalation, runAsNonRoot, seccomp required, drop all capabilities, safe volume types). Builds on baseline; promoted from Audit in #107. | `platform.io/managed` label **+** explicit system namespaces |
 | `require-pod-probes` | [require-pod-probes.yaml](../platform/base/policies/require-pod-probes.yaml) | **Audit** | Requires `livenessProbe` and `readinessProbe` (`periodSeconds > 0`) on every container. | `platform.io/managed` label **+** explicit system namespaces |
 | `require-resource-requests` | [require-requests.yaml](../platform/base/policies/require-requests.yaml) | **Audit** | Requires CPU **and** memory `resources.requests` on every container. Limits are intentionally not required (CPU limits cause throttling). | `platform.io/managed` label **+** explicit system namespaces |
 | `add-seccomp-runtime-default` | [add-seccomp-runtime-default.yaml](../platform/base/policies/add-seccomp-runtime-default.yaml) | **Mutate** | Adds a pod-level `seccompProfile: RuntimeDefault` when the Pod sets none (`+()` add-anchor, so an explicit profile wins). Closes CIS 5.7.2. | Explicit `kube-system`, `kube-node-lease`, `kube-public`, `flux-system` **only** — platform namespaces are *included* (RuntimeDefault is safe for them and they hold most of the findings) |
 
 Notes:
 
-- **Enforce vs Audit.** Only `flux-multi-tenancy` is `Enforce` (it blocks
-  admission). The Tier-1 baseline policies are `Audit` — they report violations
-  to PolicyReports without blocking — to be promoted to `Enforce` per-environment
-  via overlays once Policy Reporter shows clean. All `background: true` policies
-  also evaluate *pre-existing* resources, surfacing standing violations rather
-  than only catching them at admission.
+- **Enforce vs Audit.** `flux-multi-tenancy`, `pod-security-baseline` and
+  `pod-security-restricted` are `Enforce` (they block admission); the two Pod
+  Security Standards policies were promoted from Audit in #107 once all tenant
+  workloads were compliant (MinIO and excalidraw got restricted-compliant
+  securityContexts, the GitLab runner spawns restricted-compliant CI pods, and
+  the root-on-:80 hello-world tenant was retired). The remaining Tier-1 policies
+  (`disallow-default-namespace`, `disallow-latest-tag`, `require-pod-probes`,
+  `require-resource-requests`) stay `Audit` — report-only, to be promoted
+  per-environment once Policy Reporter shows clean. All `background: true`
+  policies also evaluate *pre-existing* resources, surfacing standing violations
+  rather than only catching them at admission.
 - **Filename vs name.** `require-requests.yaml` defines the policy named
   `require-resource-requests` (the name used in test fixtures and reports).
 - **Preconditions.** `flux-multi-tenancy`'s sourceRef rules carry preconditions

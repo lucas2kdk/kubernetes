@@ -19,6 +19,22 @@ spec:
         memory: 64Mi
       limits:
         memory: 256Mi
+  # redis_exporter sidecar so Prometheus has Redis metrics for the gitlab tenant
+  # (the gnetId 763 Grafana dashboard reads these). The operator exposes :9121 on
+  # a dedicated "gitlab-redis-metrics" Service and scrapes it via the redis
+  # ServiceMonitor (redis-servicemonitor.yaml). Using oliver006's upstream image
+  # directly rather than the operator's quay.io/opstree fork — same exporter,
+  # tracked by Renovate against a fixed ref.
+  redisExporter:
+    enabled: true
+    image: quay.io/oliver006/redis_exporter:v1.86.0 # Renovate-managed
+    imagePullPolicy: IfNotPresent
+    resources: # Kyverno require-requests
+      requests:
+        cpu: 25m
+        memory: 32Mi
+      limits:
+        memory: 64Mi
   # fsGroup makes the (root-owned) longhorn PVC writable by the non-root redis
   # process — without it redis can't create its append-only dir and crashloops.
   # The container securityContext satisfies the restricted PodSecurity / Kyverno.

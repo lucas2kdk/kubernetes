@@ -11,8 +11,9 @@ metadata:
       dangerous capabilities. Uses Kyverno's built-in podSecurity subrule so
       all container types (init, ephemeral) are covered correctly.
 spec:
-  # Audit-only for now; promote to Enforce per-environment via overlays once
-  # the policy reports are clean.
+  # Enforce (see failureAction below) — promoted from Audit in #107 once all
+  # tenant workloads were compliant. background: true also evaluates pre-existing
+  # pods so standing violations still surface in reports.
   background: true
   rules:
     - name: baseline

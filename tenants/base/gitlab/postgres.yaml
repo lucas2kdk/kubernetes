@@ -17,6 +17,11 @@ metadata:
   namespace: gitlab
 spec:
   instances: 1
+  monitoring:
+    # CNPG operator emits a PodMonitor scraping each instance's metrics exporter
+    # (:9187); Prometheus discovers it cluster-wide (podMonitorSelectorNil...=false)
+    # and the 20417-cnpg Grafana dashboard reads it.
+    enablePodMonitor: true
   imageName: ghcr.io/cloudnative-pg/postgresql:17 # Renovate-managed (GitLab 19 requires PG >= 17)
   storage:
     size: 20Gi
