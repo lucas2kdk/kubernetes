@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.9.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.8.0...platform/v1.9.0) (2026-06-20)
+
+
+### Features
+
+* **homepage:** add auto-discovery dashboard + light metrics ([#110](https://github.com/lucas2kdk/kubernetes/issues/110)) ([d00d455](https://github.com/lucas2kdk/kubernetes/commit/d00d455d5c2294ccad1db47d1599d8a54701b443))
+* **monitoring:** GitLab datastore metrics + Pod Security enforcement ([#111](https://github.com/lucas2kdk/kubernetes/issues/111)) ([1e13029](https://github.com/lucas2kdk/kubernetes/commit/1e130299f493bb67ed3275563ec847daa278ea96))
+
 ## [1.8.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.7.0...platform/v1.8.0) (2026-06-18)
 
 
