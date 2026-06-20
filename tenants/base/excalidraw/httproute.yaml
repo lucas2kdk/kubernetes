@@ -20,6 +20,9 @@ metadata:
     gethomepage.dev/group: Tenants
     gethomepage.dev/icon: excalidraw.png
     gethomepage.dev/href: "https://draw.rosenvold.tech"
+    # Pod label here is `app=excalidraw`, not the homepage default
+    # `app.kubernetes.io/name=excalidraw` — override so the status dot resolves.
+    gethomepage.dev/pod-selector: "app=excalidraw"
 spec:
   parentRefs:
     - name: cilium-gw

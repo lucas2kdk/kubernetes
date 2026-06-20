@@ -73,6 +73,31 @@ spec:
         gateway: true
       settings:
         title: ${cluster_name}
+        # Visual polish. Dark slate + a subtle background image, header collapsed
+        # so the widgets row is the first thing in view. Group order pins the
+        # most-used categories at the top — auto-discovered services fall into
+        # these via gethomepage.dev/group annotations on their ingress/httproute.
+        theme: dark
+        color: slate
+        headerStyle: clean
+        useEqualHeights: true
+        hideVersion: true
+        layout:
+          Tenants:
+            style: row
+            columns: 4
+          Platform:
+            style: row
+            columns: 4
+          Monitoring:
+            style: row
+            columns: 4
+        background:
+          image: https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=2400&q=80
+          blur: sm
+          saturate: 50
+          brightness: 50
+          opacity: 60
       # widgets.yaml — the "light metrics" strip rendered at the top of the page.
       widgets:
         # Cluster + per-node CPU/memory. Needs metrics-server (metrics.k8s.io),
@@ -105,5 +130,18 @@ spec:
             provider: duckduckgo
       # Auto-discovery supplies the service tiles; leave the static lists empty.
       services: []
-      bookmarks: []
+      # A handful of always-on links rendered in the sidebar. Auto-discovery
+      # covers in-cluster apps; this is for external SaaS we hit constantly.
+      bookmarks:
+        - Developer:
+            - GitHub:
+                - abbr: GH
+                  href: https://github.com/lucas2kdk
+        - Docs:
+            - Kubernetes:
+                - abbr: K8
+                  href: https://kubernetes.io/docs/
+            - Flux:
+                - abbr: FX
+                  href: https://fluxcd.io/flux/
       docker: {}
