@@ -40,6 +40,7 @@ spec:
           - traefik
           - monitoring
           - headlamp
+          - homepage
           - tsidp
           - trivy-system
           # longhorn-system is excluded from default-deny and manages its own

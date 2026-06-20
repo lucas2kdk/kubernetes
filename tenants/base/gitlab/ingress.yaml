@@ -8,6 +8,16 @@ kind: Ingress
 metadata:
   name: gitlab
   namespace: gitlab
+  # Auto-register on the homepage dashboard (explicit href — defaultBackend
+  # ingress has no host rules for homepage to infer the URL from). ${tailnet} is
+  # substituted via clusters/*/tenants.yaml's fleet-vars substituteFrom.
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: GitLab
+    gethomepage.dev/description: Source & CI
+    gethomepage.dev/group: Tenants
+    gethomepage.dev/icon: gitlab.png
+    gethomepage.dev/href: "https://gitlab.${tailnet}.ts.net"
 spec:
   ingressClassName: tailscale
   defaultBackend:

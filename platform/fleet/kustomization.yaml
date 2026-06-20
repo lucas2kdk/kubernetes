@@ -12,6 +12,7 @@ resources:
   - external-secrets.yaml
   - flux-notifications.yaml
   - headlamp.yaml
+  - homepage.yaml
   - kube-prometheus-stack.yaml
   - kyverno-policies.yaml
   - minio-operator.yaml

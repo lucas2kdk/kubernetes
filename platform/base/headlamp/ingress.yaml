@@ -10,6 +10,15 @@ kind: Ingress
 metadata:
   name: headlamp
   namespace: headlamp
+  # Auto-register on the homepage dashboard (explicit href — defaultBackend
+  # ingress has no host rules for homepage to infer the URL from).
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: Headlamp
+    gethomepage.dev/description: Kubernetes UI
+    gethomepage.dev/group: Platform
+    gethomepage.dev/icon: headlamp.png
+    gethomepage.dev/href: "https://headlamp.${tailnet}.ts.net"
 spec:
   ingressClassName: tailscale
   defaultBackend:

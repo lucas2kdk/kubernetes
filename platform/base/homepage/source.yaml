@@ -1,0 +1,11 @@
+# Homepage chart repo (jameswynn) for the HelmRelease. Upstream ships no
+# official chart, so this is the de-facto community one. Centralized in
+# flux-system with the other platform sources (tenants can't ref it cross-namespace).
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: homepage
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://jameswynn.github.io/helm-charts

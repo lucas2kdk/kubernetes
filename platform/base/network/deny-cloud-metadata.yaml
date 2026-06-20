@@ -42,6 +42,7 @@ spec:
           - traefik
           - monitoring
           - headlamp
+          - homepage
           - tsidp
           - trivy-system
           # longhorn-system must stay in lockstep with default-deny and

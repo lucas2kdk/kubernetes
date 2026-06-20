@@ -1,0 +1,19 @@
+# Homepage dashboard (auto-discovery + light metrics, reached over the tailnet).
+# No dependsOn: it ships no ServiceMonitor/PrometheusRule — it only queries
+# Prometheus over HTTP at runtime — and has no platform prerequisite beyond the
+# defaults the fleet patches in.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: homepage
+  namespace: flux-system
+spec:
+  path: ./base/homepage
+  postBuild:
+    substituteFrom:
+      # ${tailnet} -> HOMEPAGE_ALLOWED_HOSTS + the discovery hrefs on tailnet UIs.
+      - kind: ConfigMap
+        name: fleet-vars
+      # ${cluster_name} -> the dashboard title.
+      - kind: ConfigMap
+        name: cluster-vars

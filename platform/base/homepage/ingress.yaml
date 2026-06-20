@@ -1,0 +1,23 @@
+# Expose Homepage on the tailnet only — same model as Headlamp/Grafana: no
+# Traefik route, no cert-manager cert, no public DNS, zero public attack surface
+# (homepage has no built-in auth, so the tailnet ACL is the auth boundary). The
+# Tailscale operator provisions a proxy device named "homepage" (tag:k8s) serving
+# HTTPS with a tailnet cert: https://homepage.<tailnet>.ts.net
+# Requires MagicDNS + HTTPS certificates on the tailnet, and an ACL that lets
+# your device reach tag:k8s:443. The served hostname must also be allow-listed in
+# HOMEPAGE_ALLOWED_HOSTS (release.yaml).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: homepage
+  namespace: homepage
+spec:
+  ingressClassName: tailscale
+  defaultBackend:
+    service:
+      name: homepage
+      port:
+        number: 3000
+  tls:
+    - hosts:
+        - homepage
