@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.9.0...platform/v1.10.0) (2026-06-23)
+
+
+### Features
+
+* **homepage:** theme + bookmarks; fix(excalidraw): pod selector for status ([2114a33](https://github.com/lucas2kdk/kubernetes/commit/2114a33f33a5a6d1f7907e65eecae832c2401566))
+
 ## [1.9.0](https://github.com/lucas2kdk/kubernetes/compare/platform/v1.8.0...platform/v1.9.0) (2026-06-20)
 
 
