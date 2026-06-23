@@ -13,7 +13,7 @@ spec:
   chart:
     spec:
       chart: trivy-operator
-      version: "0.33.1" # Renovate-managed
+      version: "0.33.2" # Renovate-managed
       sourceRef:
         kind: HelmRepository
         name: aqua
