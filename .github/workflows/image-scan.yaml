@@ -21,7 +21,7 @@ env:
   # renovate: datasource=github-releases depName=kubernetes-sigs/kustomize extractVersion=^kustomize/v(?<version>.+)$
   KUSTOMIZE_VERSION: "5.8.1"
   # renovate: datasource=github-releases depName=aquasecurity/trivy extractVersion=^v(?<version>.+)$
-  TRIVY_VERSION: "0.71.0"
+  TRIVY_VERSION: "0.71.2"
 
 jobs:
   # Single job: discover the reconciled images and Trivy-scan them. `just scan`
