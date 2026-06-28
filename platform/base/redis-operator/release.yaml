@@ -13,7 +13,7 @@ spec:
   chart:
     spec:
       chart: redis-operator
-      version: "0.24.0" # Renovate-managed
+      version: "0.25.0" # Renovate-managed
       sourceRef:
         kind: HelmRepository
         name: redis-operator
