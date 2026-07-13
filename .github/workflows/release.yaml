@@ -37,7 +37,7 @@ permissions:
 env:
   OCI_IMAGE: oci.rosenvold.tech/platform
   # renovate: datasource=github-releases depName=fluxcd/flux2 extractVersion=^v(?<version>.+)$
-  FLUX_VERSION: "2.8.8"
+  FLUX_VERSION: "2.9.2"
 
 jobs:
   push-artifact:
