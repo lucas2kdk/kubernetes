@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: headlamp
-      version: "0.42.0" # Renovate-managed
+      version: "0.43.0" # Renovate-managed
       sourceRef:
         kind: HelmRepository
         name: headlamp
