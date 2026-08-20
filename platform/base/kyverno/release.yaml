@@ -96,4 +96,4 @@ spec:
       image:
         registry: ghcr.io
         repository: kyverno/readiness-checker
-        tag: v1.18.1
+        tag: v1.19.0
