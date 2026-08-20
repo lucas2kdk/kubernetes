@@ -9,7 +9,7 @@ spec:
   chart:
     spec:
       chart: tailscale-operator
-      version: "1.98.4" # Renovate-managed
+      version: "1.102.3" # Renovate-managed
       sourceRef:
         kind: HelmRepository
         name: tailscale
