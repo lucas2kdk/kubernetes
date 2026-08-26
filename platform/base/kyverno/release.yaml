@@ -14,7 +14,7 @@ spec:
   chart:
     spec:
       chart: kyverno
-      version: "3.8.1" # Renovate-managed
+      version: "3.9.0" # Renovate-managed
       sourceRef:
         kind: HelmRepository
         name: kyverno
