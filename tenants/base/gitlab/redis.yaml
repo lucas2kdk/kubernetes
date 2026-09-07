@@ -27,7 +27,7 @@ spec:
   # tracked by Renovate against a fixed ref.
   redisExporter:
     enabled: true
-    image: quay.io/oliver006/redis_exporter:v1.86.0 # Renovate-managed
+    image: quay.io/oliver006/redis_exporter:v1.91.1 # Renovate-managed
     imagePullPolicy: IfNotPresent
     resources: # Kyverno require-requests
       requests:
